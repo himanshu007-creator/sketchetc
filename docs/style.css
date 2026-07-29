@@ -132,17 +132,16 @@ h2 {
 
 /* install command */
 .cmd {
-  display: flex; align-items: stretch; max-width: 620px; margin: 0 auto;
+  display: flex; align-items: stretch; max-width: 680px; margin: 0 auto;
   background: var(--pop); border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   border-radius: 12px; overflow: hidden; text-align: left;
 }
 .cmd code {
-  flex: 1; padding: 14px 16px; white-space: nowrap; overflow-x: auto; color: var(--text);
-  scrollbar-width: none; -ms-overflow-style: none;
-  mask-image: linear-gradient(90deg, black 92%, transparent);
-  -webkit-mask-image: linear-gradient(90deg, black 92%, transparent);
+  flex: 1; min-width: 0; padding: 13px 16px; color: var(--text);
+  font-size: 12.5px; line-height: 1.5;
+  /* wraps instead of scrolling: a half-visible install command is worse than two lines */
+  white-space: pre-wrap; word-break: break-all;
 }
-.cmd code::-webkit-scrollbar { display: none; }
 .copy {
   border: 0; border-left: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
   background: color-mix(in srgb, var(--a1) 16%, transparent); color: var(--a1);

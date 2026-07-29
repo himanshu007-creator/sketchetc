@@ -33,3 +33,20 @@ Pin to a tag for an immutable install:
 No accounts, no analytics, no network calls at runtime except the widgets you
 enable (weather, GitHub PRs, update check) and the one-time install counter.
 Your journal, aura history and clipboard history stay in the local folder you choose.
+
+## Verifying a release
+
+Every tag gets `install.sh`, a source tarball and `SHA256SUMS` attached, each
+signed with keyless [cosign](https://docs.sigstore.dev/). No key to trust: the
+signature is tied to this repository's release workflow.
+
+```bash
+TAG=v1.1.0
+gh release download "$TAG" -R himanshu007-creator/sketchetc
+shasum -a 256 -c SHA256SUMS
+cosign verify-blob install.sh \
+  --signature install.sh.sig \
+  --certificate install.sh.pem \
+  --certificate-identity-regexp '^https://github.com/himanshu007-creator/sketchetc/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```

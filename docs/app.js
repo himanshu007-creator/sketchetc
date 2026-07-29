@@ -147,20 +147,28 @@ function counters() {
 
 function badges() {
   const defs = [
-    ["stars", `https://img.shields.io/github/stars/${REPO}?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33`],
-    ["forks", `https://img.shields.io/github/forks/${REPO}?style=flat&logo=github&logoColor=white&label=forks&color=555&labelColor=1b0d33`],
-    ["OpenSSF Scorecard", `https://api.scorecard.dev/projects/github.com/${REPO}/badge`],
+    ["stars", `https://img.shields.io/github/stars/${REPO}?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33`,
+     `https://github.com/${REPO}/stargazers`],
+    ["forks", `https://img.shields.io/github/forks/${REPO}?style=flat&logo=github&logoColor=white&label=forks&color=555&labelColor=1b0d33`,
+     `https://github.com/${REPO}/forks`],
+    ["OpenSSF Scorecard", `https://api.scorecard.dev/projects/github.com/${REPO}/badge`,
+     `https://scorecard.dev/viewer/?uri=github.com/${REPO}`],
+    ["licence: CC BY-NC-ND 4.0", "https://img.shields.io/badge/licence-CC%20BY--NC--ND%204.0-0bd3d3?style=flat&labelColor=1b0d33",
+     `https://github.com/${REPO}/blob/production/LICENSE`],
   ];
-  defs.forEach(([alt, src]) => {
+  // anchors are created up front so the order is the order above, not whichever
+  // badge happens to load first; each stays hidden until its image resolves
+  defs.forEach(([alt, src, href]) => {
+    const a = el("a");
+    a.href = href; a.target = "_blank"; a.rel = "noopener";
+    a.hidden = true; a.title = alt;
     const img = new Image();
-    img.src = src; img.alt = alt; img.title = alt;
-    img.onload = () => {
-      const a = el("a");
-      a.href = alt.includes("Scorecard") ? `https://scorecard.dev/viewer/?uri=github.com/${REPO}`
-                                        : `https://github.com/${REPO}`;
-      a.target = "_blank"; a.rel = "noopener"; a.appendChild(img);
-      $("#topbadges").appendChild(a);
-    };
+    img.alt = alt;
+    img.onload = () => { a.hidden = false; };
+    img.onerror = () => a.remove();
+    a.appendChild(img);
+    $("#topbadges").appendChild(a);
+    img.src = src;
   });
 }
 
