@@ -45,8 +45,7 @@ TAG=v1.1.0
 gh release download "$TAG" -R himanshu007-creator/sketchetc
 shasum -a 256 -c SHA256SUMS
 cosign verify-blob install.sh \
-  --signature install.sh.sig \
-  --certificate install.sh.pem \
+  --bundle install.sh.sigstore.json \
   --certificate-identity-regexp '^https://github.com/himanshu007-creator/sketchetc/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
