@@ -51,6 +51,13 @@ var known = Set((try? fm.contentsOfDirectory(atPath: shotDir)) ?? [])
 
 func isImage(_ name: String) -> Bool {
     let l = name.lowercased()
+    // shot-*.png is the shot widget's own output, and shot_do.sh already puts it in
+    // the store itself. Importing it here too produced two entries for one snip:
+    // this copies the file's bytes while the pasteboard path stores pngpaste's
+    // re-encode of the same image, so the md5 dedupe can never match the two.
+    // This watcher exists for captures that never reach the store any other way,
+    // which means the native Cmd+Shift+4/5 screenshots.
+    if l.hasPrefix("shot-") { return false }
     return l.hasSuffix(".png") || l.hasSuffix(".jpg") || l.hasSuffix(".jpeg")
 }
 

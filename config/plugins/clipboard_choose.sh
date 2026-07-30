@@ -1,8 +1,13 @@
 #!/bin/bash
 # Option+V: centered clipboard picker (arrow keys + Enter, click, Esc; image previews)
-source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/storage_lib.sh"
-STORE="$(clip_dir)"
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
+# clip_lib exports STORE and capture(); sourcing it also pulls in storage_lib
+source "$CONFIG_DIR/plugins/clip_lib.sh"
+
+# Capture before listing. Reading the store straight away means anything copied a
+# moment ago, or copied while clip_watch was not running, is missing from the picker
+# and the newest thing you copied is exactly what you came here to paste.
+capture
 
 FILES=()
 while read -r f; do FILES+=("$STORE/$f"); done < <(ls -t "$STORE" 2>/dev/null | grep -v '^\.' | head -5)

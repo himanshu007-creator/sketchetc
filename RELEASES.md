@@ -1,5 +1,14 @@
 # Release notes
 
+## 1.2.4 — snips land in Option+V, releases noticed within 30 minutes
+
+- Every capture in the shot menu now lands on the clipboard and appears in Option+V immediately, with a Snip ready to paste notification and no voice
+- Option+V captures the clipboard as it opens, so the thing you just copied is always in the list even if the background watcher was not running
+- One snip no longer creates two entries in clipboard history
+- Cancelling an area to clipboard capture with Esc no longer claims it succeeded, and Finder is no longer pulled to the front after every capture
+- New releases are noticed within 30 minutes instead of up to six hours, and still notify only once per release
+- The clipboard popup now mentions that Option+V opens it in any app
+
 ## 1.2.3 — one installer instead of two
 
 - The repo installer and the published installer are now a single implementation. install.sh is a thin wrapper that runs docs/install.sh with a new --local flag, which installs from the checkout instead of cloning
