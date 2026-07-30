@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 128 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 130 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -129,8 +129,10 @@ mkdir -p "$HOME/.config/skhd" 2>/dev/null || true
 grep -q clipboard_choose "$HOME/.config/skhd/skhdrc" 2>/dev/null || \
   echo 'alt - v : CONFIG_DIR=$HOME/.config/sketchybar $HOME/.config/sketchybar/plugins/clipboard_choose.sh' >> "$HOME/.config/skhd/skhdrc"
 fi
-run skhd --install-service
-run skhd --start-service
+# both are already-done-is-fine: skhd exits non-zero when the service file
+# exists, which under set -e used to abort every reinstall part way through
+run skhd --install-service || true
+run skhd --restart-service 2>/dev/null || run skhd --start-service || true
 
 say "Starting sketchetc"
 run brew services restart sketchybar
@@ -170,7 +172,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect 346e5114e86d84308f22295fd4c7eda1ed4fc45fb5d818188eeb7ce45dfca9d0
+shasum -a 256 install.sh    # expect 844f6cb0c12ec8206502a72fda947f69276c7f37097762e0473d9af1a7efe471
 less install.sh             # read it
 bash install.sh
 ```
