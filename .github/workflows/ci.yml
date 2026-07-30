@@ -35,3 +35,76 @@ jobs:
         run: |
           shasum -a 256 docs/install.sh | awk '{print $1"  install.sh"}' > /tmp/sum
           diff /tmp/sum docs/install.sh.sha256 || (echo "run scripts/sync_trust.sh"; exit 1)
+
+  # The dry run above cannot catch an aborting install: --dry-run makes `run` print
+  # instead of execute, so the steps that have actually broken (the font download,
+  # the desktop hotkeys, skhd) never run at all. This executes both installers for
+  # real against a throwaway HOME with the system-mutating commands shimmed.
+  installer:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Build command shims
+        run: |
+          mkdir -p "$RUNNER_TEMP/shim"
+          cat > "$RUNNER_TEMP/shim/brew" <<'EOF'
+          #!/bin/bash
+          case "$1" in
+            list) exit 0 ;;                        # pretend every formula is present
+            services) echo "[shim] brew services $*"; exit 0 ;;
+          esac
+          echo "[shim] brew $*"; exit 0
+          EOF
+          cat > "$RUNNER_TEMP/shim/skhd" <<'EOF'
+          #!/bin/bash
+          # the real skhd exits non-zero when the service file already exists, which
+          # is the reinstall case that used to abort the run part way through
+          [ "$1" = "--install-service" ] && { echo "[shim] skhd: already installed" >&2; exit 1; }
+          echo "[shim] skhd $*"; exit 0
+          EOF
+          cat > "$RUNNER_TEMP/shim/defaults" <<'EOF'
+          #!/bin/bash
+          # export has to produce a parseable plist or plistlib raises and kills the run
+          if [ "$1" = "export" ]; then
+            printf '%s' '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict/></plist>' > "$3"
+          fi
+          exit 0
+          EOF
+          cat > "$RUNNER_TEMP/shim/killall" <<'EOF'
+          #!/bin/bash
+          echo "[shim] killall $*"; exit 0
+          EOF
+          cat > "$RUNNER_TEMP/shim/swiftc" <<'EOF'
+          #!/bin/bash
+          # real compilation is covered by the Swift syntax step; just satisfy -o
+          out=""; while [ $# -gt 0 ]; do [ "$1" = "-o" ] && { out="$2"; shift; }; shift; done
+          [ -n "$out" ] && { : > "$out"; chmod +x "$out"; }
+          exit 0
+          EOF
+          chmod +x "$RUNNER_TEMP/shim"/*
+
+      # --no-count is required. Without it every CI run increments the public
+      # installs counter, and that number cannot be decremented.
+      - name: Published installer runs to completion on a bare HOME
+        run: |
+          set -euo pipefail
+          TMPH="$RUNNER_TEMP/home-docs"; rm -rf "$TMPH"; mkdir -p "$TMPH"
+          # deliberately no Library/Fonts: that absence is what broke fresh installs
+          env -i HOME="$TMPH" PATH="$RUNNER_TEMP/shim:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb \
+            bash docs/install.sh --no-count 2>&1 | tee "$RUNNER_TEMP/docs.log"
+          grep -q "is running." "$RUNNER_TEMP/docs.log" \
+            || { echo "::error::installer never reached the closing banner"; exit 1; }
+          [ -L "$TMPH/.config/sketchybar" ] \
+            || { echo "::error::config symlink was never created"; exit 1; }
+          echo "docs/install.sh completed"
+
+      - name: Repo installer runs to completion on a bare HOME
+        run: |
+          set -euo pipefail
+          TMPH="$RUNNER_TEMP/home-root"; rm -rf "$TMPH"; mkdir -p "$TMPH"
+          env -i HOME="$TMPH" PATH="$RUNNER_TEMP/shim:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb \
+            bash ./install.sh 2>&1 | tee "$RUNNER_TEMP/root.log"
+          [ -L "$TMPH/.config/sketchybar" ] \
+            || { echo "::error::config symlink was never created"; exit 1; }
+          echo "./install.sh completed"

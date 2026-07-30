@@ -1,5 +1,12 @@
 # Release notes
 
+## 1.2.2 — installs no longer die on optional setup steps
+
+- Fresh macOS accounts have no ~/Library/Fonts. The app icon font download could not create it, and under set -e that ended the install before the bar ever started, leaving no menu bar at all. Both installers now create the folder and treat a failed download as a warning
+- The ctrl+1..4 desktop hotkeys are no longer able to abort an install. If defaults or activateSettings fails you lose the shortcuts, nothing else
+- The repo installer used by the git clone route carried the same font bug as the one line installer and is now fixed too
+- CI runs both installers for real against a bare HOME instead of only a dry run, which could not execute the steps that kept breaking
+
 ## 1.2.1 — top bar badges drawn locally
 
 - The install and visit counters in the site header no longer show "inaccessible" when shields.io is throttled: every badge is drawn from the raw API value in one consistent style

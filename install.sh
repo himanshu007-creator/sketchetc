@@ -15,9 +15,14 @@ brew tap koekeishiya/formulae 2>/dev/null || true
 brew trust koekeishiya/formulae 2>/dev/null || true
 brew list skhd &>/dev/null || brew install koekeishiya/formulae/skhd  # Ctrl+V clipboard hotkey
 brew list --cask font-jetbrains-mono-nerd-font &>/dev/null || brew install --cask font-jetbrains-mono-nerd-font
-[ -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ] || \
-  curl -sL "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf" \
-    -o "$HOME/Library/Fonts/sketchybar-app-font.ttf"
+if [ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then
+  # a fresh macOS account has no ~/Library/Fonts yet, and curl will not create it.
+  # Under set -e that aborted the whole install before the bar ever started.
+  mkdir -p "$HOME/Library/Fonts"
+  curl -fsSL "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf" \
+    -o "$HOME/Library/Fonts/sketchybar-app-font.ttf" \
+    || echo "  ! app icon font download failed, app icons will fall back"
+fi
 
 echo "==> Linking config"
 if [ -e "$HOME/.config/sketchybar" ] && [ ! -L "$HOME/.config/sketchybar" ]; then
@@ -34,6 +39,9 @@ defaults write NSGlobalDomain _HIHideMenuBar -bool false
 killall Finder 2>/dev/null || true
 
 echo "==> Enabling ctrl+1..4 desktop-switch hotkeys"
+# a convenience, not a requirement: defaults, plistlib or activateSettings failing
+# here should cost the shortcuts, not leave someone without a menu bar
+hotkeys() {
 TMP=$(mktemp -d)
 defaults export com.apple.symbolichotkeys "$TMP/shk.plist"
 python3 - "$TMP/shk.plist" <<'EOF'
@@ -47,6 +55,8 @@ with open(p, 'wb') as f: plistlib.dump(d, f)
 EOF
 defaults import com.apple.symbolichotkeys "$TMP/shk.plist"
 /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+}
+hotkeys || echo "  ! could not set the ctrl+1..4 desktop hotkeys, everything else is fine"
 
 echo "==> Compiling Swift helpers (outside-click close, meetings widget)"
 if command -v swiftc >/dev/null; then
