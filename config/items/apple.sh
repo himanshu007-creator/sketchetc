@@ -35,5 +35,6 @@ add_row sound    󰋋 "Notification sound…" "$PLUGIN_DIR/notify_pick.sh"
 FS_LABEL=$([ -f "$CONFIG_DIR/.fs_guard_off" ] && echo "Fullscreen Guard: OFF" || echo "Fullscreen Guard: ON")
 add_row fsguard 󰊓 "$FS_LABEL" 'CFG="$HOME/.config/sketchybar"; if [ -f "$CFG/.fs_guard_off" ]; then rm "$CFG/.fs_guard_off"; sketchybar --set apple.fsguard label="Fullscreen Guard: ON"; else touch "$CFG/.fs_guard_off"; sketchybar --set apple.fsguard label="Fullscreen Guard: OFF"; fi' keep_open
 
+add_row update 󰚰 "Check for updates…" "osascript -e 'do shell script \"nohup $PLUGIN_DIR/update_now.sh > /dev/null 2>&1 &\"'"
 add_row revert 󰩈 "Revert to macOS bar" "$PLUGIN_DIR/revert.sh"
 sketchybar --set apple.revert icon.color=$RED label.color=$RED

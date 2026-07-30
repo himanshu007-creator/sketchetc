@@ -149,6 +149,10 @@ function badges() {
   const defs = [
     ["latest release", `https://img.shields.io/github/v/release/${REPO}?style=flat&label=release&color=ff6ec7&labelColor=1b0d33&display_name=tag&sort=semver`,
      `https://github.com/${REPO}/releases/latest`],
+    ["installs", "https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Finstalls%2F&query=%24.count&label=installs&color=0bd3d3&labelColor=1b0d33&style=flat",
+     `https://github.com/${REPO}#install`],
+    ["site visits", "https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Fvisits%2F&query=%24.count&label=visits&color=ffa552&labelColor=1b0d33&style=flat",
+     `https://github.com/${REPO}`],
     ["stars", `https://img.shields.io/github/stars/${REPO}?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33`,
      `https://github.com/${REPO}/stargazers`],
     ["forks", `https://img.shields.io/github/forks/${REPO}?style=flat&logo=github&logoColor=white&label=forks&color=555&labelColor=1b0d33`,

@@ -30,7 +30,7 @@ if [ "$SENDER" = "mouse.clicked" ]; then
         click_script="$4; sketchybar --set updater popup.drawing=off" \
       --subscribe "updater.row.$1" mouse.entered mouse.exited
   }
-  row now  󰚰 "Update now" "osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/update_apply.sh > /dev/null 2>&1 &\"'"
+  row now  󰚰 "Update now" "osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/update_now.sh quiet > /dev/null 2>&1 &\"'"
   row notes 󰋽 "What's new" "osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/release_open.sh remote > /dev/null 2>&1 &\"'"
   row skip 󰅖 "Skip this version" "echo '$REMOTE' > $CONFIG_DIR/.update_skip; sketchybar --set updater drawing=off"
   toggle_popup

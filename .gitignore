@@ -14,3 +14,5 @@ config/.update_state
 config/.update_notified_*
 config/.update_skip
 config/.popup_open
+config/.iconset
+config/.notify_sound
