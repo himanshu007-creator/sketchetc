@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 130 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 137 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -70,8 +70,12 @@ done
 brew list skhd &>/dev/null || run brew install koekeishiya/formulae/skhd
 brew list --cask font-jetbrains-mono-nerd-font &>/dev/null || run brew install --cask font-jetbrains-mono-nerd-font
 if [ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then
-  run curl -sL "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf" \
-    -o "$HOME/Library/Fonts/sketchybar-app-font.ttf"
+  # a fresh macOS account has no ~/Library/Fonts yet, and curl will not create
+  # it. Under set -e that aborted the whole install before the bar ever started.
+  run mkdir -p "$HOME/Library/Fonts"
+  run curl -fsSL "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf" \
+    -o "$HOME/Library/Fonts/sketchybar-app-font.ttf" \
+    || warn "app icon font download failed, app icons will fall back"
 fi
 
 # ---------- code ----------
@@ -109,6 +113,7 @@ fi
 say "System setup"
 run defaults write NSGlobalDomain _HIHideMenuBar -bool false
 if [ "$DRY" = 0 ]; then
+  hotkeys() {
   TMP=$(mktemp -d); defaults export com.apple.symbolichotkeys "$TMP/shk.plist"
   python3 - "$TMP/shk.plist" <<'PY'
 import plistlib, sys
@@ -122,6 +127,8 @@ PY
   defaults import com.apple.symbolichotkeys "$TMP/shk.plist"
   /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
   killall Finder 2>/dev/null || true
+  }
+  hotkeys || warn "could not set the ctrl+1..4 desktop hotkeys, everything else is fine"
 fi
 
 if [ "$DRY" = 0 ]; then
@@ -172,7 +179,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect 844f6cb0c12ec8206502a72fda947f69276c7f37097762e0473d9af1a7efe471
+shasum -a 256 install.sh    # expect f9dfd3671a023d8a7d48f5aa7d50756c60f6a6239864080072699e7dfaf48cfc
 less install.sh             # read it
 bash install.sh
 ```

@@ -36,8 +36,12 @@ done
 brew list skhd &>/dev/null || run brew install koekeishiya/formulae/skhd
 brew list --cask font-jetbrains-mono-nerd-font &>/dev/null || run brew install --cask font-jetbrains-mono-nerd-font
 if [ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then
-  run curl -sL "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf" \
-    -o "$HOME/Library/Fonts/sketchybar-app-font.ttf"
+  # a fresh macOS account has no ~/Library/Fonts yet, and curl will not create
+  # it. Under set -e that aborted the whole install before the bar ever started.
+  run mkdir -p "$HOME/Library/Fonts"
+  run curl -fsSL "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf" \
+    -o "$HOME/Library/Fonts/sketchybar-app-font.ttf" \
+    || warn "app icon font download failed, app icons will fall back"
 fi
 
 # ---------- code ----------
@@ -75,6 +79,7 @@ fi
 say "System setup"
 run defaults write NSGlobalDomain _HIHideMenuBar -bool false
 if [ "$DRY" = 0 ]; then
+  hotkeys() {
   TMP=$(mktemp -d); defaults export com.apple.symbolichotkeys "$TMP/shk.plist"
   python3 - "$TMP/shk.plist" <<'PY'
 import plistlib, sys
@@ -88,6 +93,8 @@ PY
   defaults import com.apple.symbolichotkeys "$TMP/shk.plist"
   /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
   killall Finder 2>/dev/null || true
+  }
+  hotkeys || warn "could not set the ctrl+1..4 desktop hotkeys, everything else is fine"
 fi
 
 if [ "$DRY" = 0 ]; then
