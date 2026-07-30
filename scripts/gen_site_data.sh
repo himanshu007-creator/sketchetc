@@ -109,3 +109,18 @@ os.makedirs(os.path.dirname(out), exist_ok=True)
 json.dump(data, open(out, "w"), indent=1, ensure_ascii=False)
 print(f"{out}: {len(widgets)} widgets · {len(themes)} themes · {len(iconsets)} iconsets · ${total} replaced")
 PY
+
+# Stamp the version onto the asset URLs. GitHub Pages serves them with
+# max-age=600, so without this a release's JS stays invisible to anyone who
+# loaded the page in the last ten minutes.
+python3 - "$REPO" <<'PY'
+import re, sys, pathlib
+repo = sys.argv[1]
+ver = (pathlib.Path(repo) / "VERSION").read_text().strip()
+p = pathlib.Path(repo) / "docs" / "index.html"
+t = p.read_text()
+new = re.sub(r'\b(style\.css|app\.js|icons\.js)(\?v=[^"\']*)?', lambda m: f"{m.group(1)}?v={ver}", t)
+if new != t:
+    p.write_text(new)
+    print(f"docs/index.html: assets stamped ?v={ver}")
+PY
