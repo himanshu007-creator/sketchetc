@@ -137,45 +137,67 @@ function liveBar() {
 
 // counters: one visit ping, one installs read (no analytics, no cookies)
 function counters() {
+  // shields.io renders these two as "inaccessible" whenever its fetch of the
+  // counter API is throttled, so the chips are drawn from our own response.
+  const show = (id, n) => {
+    const a = $(`#pill-${id}`);
+    if (a) { a.querySelector(".pv").textContent = n.toLocaleString(); a.hidden = false; }
+    const foot = $(`#${id}`);
+    if (foot) foot.textContent = n.toLocaleString();
+  };
   fetch(`${COUNTER}/visits/up`).then(r => r.json())
-    .then(d => { if (typeof d.count === "number") $("#visits").textContent = d.count.toLocaleString(); })
+    .then(d => { if (typeof d.count === "number") show("visits", d.count); })
     .catch(() => {});
   fetch(`${COUNTER}/installs/`).then(r => r.json())
-    .then(d => { if (typeof d.count === "number") $("#installs").textContent = d.count.toLocaleString(); })
+    .then(d => { if (typeof d.count === "number") show("installs", d.count); })
     .catch(() => {});
 }
 
 function badges() {
-  const defs = [
-    ["latest release", `https://img.shields.io/github/v/release/${REPO}?style=flat&label=release&color=ff6ec7&labelColor=1b0d33&display_name=tag&sort=semver`,
-     `https://github.com/${REPO}/releases/latest`],
-    ["installs", "https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Finstalls%2F&query=%24.count&label=installs&color=0bd3d3&labelColor=1b0d33&style=flat",
-     `https://github.com/${REPO}#install`],
-    ["site visits", "https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Fvisits%2F&query=%24.count&label=visits&color=ffa552&labelColor=1b0d33&style=flat",
-     `https://github.com/${REPO}`],
-    ["stars", `https://img.shields.io/github/stars/${REPO}?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33`,
-     `https://github.com/${REPO}/stargazers`],
-    ["forks", `https://img.shields.io/github/forks/${REPO}?style=flat&logo=github&logoColor=white&label=forks&color=555&labelColor=1b0d33`,
-     `https://github.com/${REPO}/forks`],
-    ["OpenSSF Scorecard", `https://api.scorecard.dev/projects/github.com/${REPO}/badge`,
-     `https://scorecard.dev/viewer/?uri=github.com/${REPO}`],
-    ["licence: CC BY-NC-ND 4.0", "https://img.shields.io/badge/licence-CC%20BY--NC--ND%204.0-0bd3d3?style=flat&labelColor=1b0d33",
-     `https://github.com/${REPO}/blob/production/LICENSE`],
-  ];
-  // anchors are created up front so the order is the order above, not whichever
-  // badge happens to load first; each stays hidden until its image resolves
-  defs.forEach(([alt, src, href]) => {
-    const a = el("a");
-    a.href = href; a.target = "_blank"; a.rel = "noopener";
-    a.hidden = true; a.title = alt;
-    const img = new Image();
-    img.alt = alt;
-    img.onload = () => { a.hidden = false; };
-    img.onerror = () => a.remove();
-    a.appendChild(img);
-    $("#topbadges").appendChild(a);
-    img.src = src;
-  });
+  // Every pill is drawn here from raw API numbers rather than pulled as a
+  // shields.io image: the counter badges rendered "inaccessible" whenever
+  // shields' own fetch got throttled, and one consistent local style beats a
+  // row of third-party PNGs at slightly different heights.
+  const box = $("#topbadges");
+  const pill = (id, ico, label, href, title) => {
+    const a = el("a", "pill");
+    a.id = `pill-${id}`; a.href = href; a.title = title || label;
+    a.target = "_blank"; a.rel = "noopener"; a.hidden = true;
+    a.innerHTML = `${icon(ico, "pico")}<span class="pv">-</span>`;
+    box.appendChild(a);
+    return a;
+  };
+  const fill = (id, text, cls) => {
+    const a = $(`#pill-${id}`);
+    if (!a || text == null) return;
+    a.querySelector(".pv").textContent = text;
+    if (cls) a.classList.add(cls);
+    a.hidden = false;
+  };
+
+  // order is fixed here, so a slow response never reshuffles the row
+  pill("release", "tag", "release", `https://github.com/${REPO}/releases/latest`, "latest release");
+  pill("installs", "download", "installs", `https://github.com/${REPO}#install`, "installs so far");
+  pill("visits", "eye", "visits", `https://github.com/${REPO}`, "visits to this page");
+  pill("stars", "star", "stars", `https://github.com/${REPO}/stargazers`, "github stars");
+  pill("forks", "fork", "forks", `https://github.com/${REPO}/forks`, "github forks");
+  pill("score", "shield", "scorecard", `https://scorecard.dev/viewer/?uri=github.com/${REPO}`, "OpenSSF Scorecard");
+  pill("licence", "scale", "licence", `https://github.com/${REPO}/blob/production/LICENSE`, "CC BY-NC-ND 4.0: free forever, never sold");
+  fill("licence", "CC BY-NC-ND");
+
+  fetch(`https://api.github.com/repos/${REPO}`).then(r => r.json()).then(d => {
+    if (typeof d.stargazers_count === "number") fill("stars", d.stargazers_count.toLocaleString());
+    if (typeof d.forks_count === "number") fill("forks", d.forks_count.toLocaleString());
+  }).catch(() => {});
+
+  fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then(r => r.json())
+    .then(d => { if (d.tag_name) fill("release", d.tag_name, "accent"); }).catch(() => {});
+
+  fetch(`https://api.securityscorecards.dev/projects/github.com/${REPO}`).then(r => r.json())
+    .then(d => {
+      if (typeof d.score !== "number") return;
+      fill("score", d.score.toFixed(1), d.score >= 7 ? "good" : "warn");
+    }).catch(() => {});
 }
 
 // cursor glow + hero tilt + scroll progress
@@ -218,5 +240,5 @@ addEventListener("load", () => {
 Promise.all([
   fetch("data/site.json").then(r => r.json()),
   fetch("data/trust.json").then(r => r.json()).catch(() => null),
-]).then(([d, trust]) => { render(d, trust); liveBar(); motion(); counters(); badges(); })
+]).then(([d, trust]) => { render(d, trust); liveBar(); motion(); badges(); counters(); })
   .catch(() => { $("#featrows").innerHTML = "<li>could not load feature data</li>"; });

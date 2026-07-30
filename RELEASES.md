@@ -1,5 +1,10 @@
 # Release notes
 
+## 1.2.1 — top bar badges drawn locally
+
+- The install and visit counters in the site header no longer show "inaccessible" when shields.io is throttled: every badge is drawn from the raw API value in one consistent style
+- Each badge carries its own icon rather than sharing one, and unfilled badges stay hidden instead of flashing a placeholder
+
 ## 1.2.0 — journal history adoption, update confirmation, signed releases
 
 - Journal: pointing the data folder at a folder that is already a journal root now adopts the history instead of shadowing it with an empty one. Entries are moved under journal/ with their immutability and hash chain intact
