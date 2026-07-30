@@ -39,8 +39,11 @@ if [ "${BEHIND:-0}" -eq 0 ]; then
 fi
 
 # summarise what is actually coming, so "yes" is an informed yes
+# a release lands as a commit on develop and again as production's merge commit,
+# so the same subject shows up twice without the dedupe
 SUMMARY=$(git -C "$APP" log --pretty='- %s' "HEAD..origin/$CHANNEL" 2>/dev/null \
-  | grep -v '^- Merge' | head -6 | sed 's/"/\\"/g' | tr '\n' '@' | sed 's/@/\\n/g')
+  | grep -v '^- Merge' | awk '!seen[$0]++' | head -6 \
+  | sed 's/"/\\"/g' | tr '\n' '@' | sed 's/@/\\n/g')
 
 if ask "Update sketchetc?" "v$HERE  ->  v$THERE ($BEHIND commit(s))\\n\\n$SUMMARY\\n\\nThe bar reloads when it finishes." "Update"; then
   "$CONFIG_DIR/plugins/notify.sh" update "sketchetc" "Updating to v$THERE"
