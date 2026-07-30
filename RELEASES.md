@@ -1,5 +1,16 @@
 # Release notes
 
+## 1.2.0 — journal history adoption, update confirmation, signed releases
+
+- Journal: pointing the data folder at a folder that is already a journal root now adopts the history instead of shadowing it with an empty one. Entries are moved under journal/ with their immutability and hash chain intact
+- Updates: the Apple menu has a Check for updates row, and nothing installs until you confirm. The dialog shows the version jump and the incoming changes
+- Updates: changing any setting used to break every future update, because a locally edited tracked file makes a fast-forward pull refuse. Your edits are now set aside and restored around the pull
+- Installer: reinstalling over an existing setup no longer aborts part way through when skhd is already installed
+- Helpers: one shared builder compiles anything missing or stale, so a fresh clone, an update and a plain reload all self-heal. This fixes clipboard history, the aura window, the journal entry box and the release popup silently doing nothing
+- Clipboard: native Cmd+Shift+4 and Cmd+Shift+5 screenshots reach clipboard history within a second, so Option+V always has your latest shot on top
+- Releases are signed with keyless cosign and carry build provenance; verify with cosign verify-blob (see SECURITY.md)
+- Licence is now CC BY-NC-ND 4.0: free forever and never sold, no charging and no redistributing a modified copy
+
 ## 1.1.0 — self-healing helpers, signed releases, new licence
 
 - Fixed clipboard history, the aura window, the journal entry box and the release popup: their compiled helpers had gone missing and nothing rebuilt them
