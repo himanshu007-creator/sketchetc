@@ -7,3 +7,10 @@ config/.theme
 # compiled helpers are built on the user machine, never committed
 config/plugins/bin/*
 !config/plugins/bin/*.swift
+
+# runtime state, per machine - never belongs in the repo
+config/.last_seen_version
+config/.update_state
+config/.update_notified_*
+config/.update_skip
+config/.popup_open
