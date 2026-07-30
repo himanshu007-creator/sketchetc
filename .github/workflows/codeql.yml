@@ -1,0 +1,29 @@
+name: codeql
+
+# Analyses the workflows themselves. The Swift helpers are loose files with no
+# build graph, so CodeQL cannot compile them; the workflows are where an actual
+# injection or token-leak bug would hide anyway.
+on:
+  push:
+    branches: [develop, production]
+  pull_request:
+    branches: [develop]
+  schedule:
+    - cron: "27 4 * * 1"
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # uploads the SARIF results
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: github/codeql-action/init@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
+        with:
+          languages: actions
+
+      - uses: github/codeql-action/analyze@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2

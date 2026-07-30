@@ -147,6 +147,8 @@ function counters() {
 
 function badges() {
   const defs = [
+    ["latest release", `https://img.shields.io/github/v/release/${REPO}?style=flat&label=release&color=ff6ec7&labelColor=1b0d33&display_name=tag&sort=semver`,
+     `https://github.com/${REPO}/releases/latest`],
     ["stars", `https://img.shields.io/github/stars/${REPO}?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33`,
      `https://github.com/${REPO}/stargazers`],
     ["forks", `https://img.shields.io/github/forks/${REPO}?style=flat&logo=github&logoColor=white&label=forks&color=555&labelColor=1b0d33`,

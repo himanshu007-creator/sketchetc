@@ -6,6 +6,7 @@ Free forever, source visible to everyone — and it replaces a small pile of pai
 ![topbar](assets/topbar.png)
 
 <p>
+<a href="https://github.com/himanshu007-creator/sketchetc/releases/latest"><img alt="latest release" src="https://img.shields.io/github/v/release/himanshu007-creator/sketchetc?style=flat&label=release&color=ff6ec7&labelColor=1b0d33&display_name=tag&sort=semver"></a>
 <a href="https://himanshu007-creator.github.io/sketchetc"><img alt="site" src="https://img.shields.io/badge/site-sketchetc-ff6ec7?style=flat"></a>
 <img alt="installs" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Finstalls%2F&query=%24.count&label=installs&color=0bd3d3&labelColor=1b0d33&style=flat">
 <img alt="stars" src="https://img.shields.io/github/stars/himanshu007-creator/sketchetc?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33">

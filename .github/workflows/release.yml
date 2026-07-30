@@ -21,6 +21,7 @@ jobs:
     permissions:
       contents: write   # uploads assets to the release
       id-token: write   # keyless signing via OIDC
+      attestations: write   # build provenance for the artifacts
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -50,16 +51,31 @@ jobs:
         run: |
           set -euo pipefail
           cd dist
-          # Two formats on purpose: the sigstore bundle is what current cosign
-          # verifies natively, the detached .sig/.pem pair is what older cosign
-          # and most verification docs still expect.
+          # cosign v4 only writes sigstore bundles; the deprecated detached
+          # flags are refused outright. The .sig/.pem pair is unpacked from the
+          # bundle afterwards, so older verifiers still have something to use.
           for f in install.sh SHA256SUMS sketchetc-*.tar.gz; do
             cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"
-            cosign sign-blob --yes --new-bundle-format=false \
-              --output-signature "$f.sig" \
-              --output-certificate "$f.pem" "$f"
+            jq -r '.messageSignature.signature' "$f.sigstore.json" > "$f.sig"
+            {
+              echo "-----BEGIN CERTIFICATE-----"
+              jq -r '.verificationMaterial.certificate.rawBytes' "$f.sigstore.json" | fold -w 64
+              echo "-----END CERTIFICATE-----"
+            } > "$f.pem"
+            openssl x509 -in "$f.pem" -noout -subject >/dev/null   # fail loudly on a malformed cert
           done
           ls -l
+
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: dist/install.sh, dist/sketchetc-*.tar.gz
+
+      - name: Attach the provenance bundle as an asset
+        # the attestation is queryable via the API, but auditors look for the
+        # in-toto bundle sitting on the release itself
+        run: cp "${{ steps.attest.outputs.bundle-path }}" dist/provenance.intoto.jsonl
 
       - name: Attach to the release
         env:
