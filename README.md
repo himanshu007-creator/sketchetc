@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 137 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 149 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -38,11 +38,21 @@ BRANCH="${SKETCHETC_CHANNEL:-production}"
 APP="$HOME/.local/share/sketchetc/app"
 DRY=0
 COUNT=1
+LOCAL=0
 for a in "$@"; do
   [ "$a" = "--dry-run" ] && DRY=1
   [ "$a" = "--no-count" ] && COUNT=0
+  [ "$a" = "--local" ] && LOCAL=1
 done
 [ -n "${SKETCHETC_NO_TELEMETRY:-}" ] && COUNT=0
+
+# --local installs from the checkout this script sits in rather than cloning, so
+# the repo's own install.sh can be a one line wrapper around this file. Two
+# installers drifting apart is what let the same bug ship twice.
+if [ "$LOCAL" = 1 ]; then
+  APP="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  [ -d "$APP/config" ] || { echo "--local: no config/ next to $APP, is this a sketchetc checkout?"; exit 1; }
+fi
 
 say()  { printf '[38;5;213m==>[0m %s
 ' "$1"; }
@@ -79,7 +89,9 @@ if [ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then
 fi
 
 # ---------- code ----------
-if [ -d "$APP/.git" ]; then
+if [ "$LOCAL" = 1 ]; then
+  say "Using this checkout ($APP)"
+elif [ -d "$APP/.git" ]; then
   say "Updating sketchetc ($BRANCH)"
   run git -C "$APP" fetch --quiet origin "$BRANCH"
   run git -C "$APP" checkout --quiet "$BRANCH"
@@ -179,7 +191,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect f9dfd3671a023d8a7d48f5aa7d50756c60f6a6239864080072699e7dfaf48cfc
+shasum -a 256 install.sh    # expect 2b64f5b9a970d3332884bc20466cb53a6aa5e9d4c17c48b8797cae8e772a0e6e
 less install.sh             # read it
 bash install.sh
 ```
@@ -187,7 +199,7 @@ bash install.sh
 **Pin to a release** (immutable — this exact commit, forever):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.2.2/docs/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.2.3/docs/install.sh -o install.sh
 shasum -a 256 install.sh && bash install.sh
 ```
 <!-- INSTALLER:END -->

@@ -99,12 +99,19 @@ jobs:
             || { echo "::error::config symlink was never created"; exit 1; }
           echo "docs/install.sh completed"
 
+      # --no-count matters here too: the repo installer is a wrapper around
+      # docs/install.sh, so it reaches the same counter.
       - name: Repo installer runs to completion on a bare HOME
         run: |
           set -euo pipefail
           TMPH="$RUNNER_TEMP/home-root"; rm -rf "$TMPH"; mkdir -p "$TMPH"
           env -i HOME="$TMPH" PATH="$RUNNER_TEMP/shim:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb \
-            bash ./install.sh 2>&1 | tee "$RUNNER_TEMP/root.log"
+            bash ./install.sh --no-count 2>&1 | tee "$RUNNER_TEMP/root.log"
+          grep -q "is running." "$RUNNER_TEMP/root.log" \
+            || { echo "::error::installer never reached the closing banner"; exit 1; }
           [ -L "$TMPH/.config/sketchybar" ] \
             || { echo "::error::config symlink was never created"; exit 1; }
-          echo "./install.sh completed"
+          # --local must use the checkout, never a fresh clone into ~/.local/share
+          [ "$(readlink "$TMPH/.config/sketchybar")" = "$PWD/config" ] \
+            || { echo "::error::--local did not link to the checkout"; exit 1; }
+          echo "./install.sh completed against the checkout"

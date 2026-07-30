@@ -8,11 +8,21 @@ BRANCH="${SKETCHETC_CHANNEL:-production}"
 APP="$HOME/.local/share/sketchetc/app"
 DRY=0
 COUNT=1
+LOCAL=0
 for a in "$@"; do
   [ "$a" = "--dry-run" ] && DRY=1
   [ "$a" = "--no-count" ] && COUNT=0
+  [ "$a" = "--local" ] && LOCAL=1
 done
 [ -n "${SKETCHETC_NO_TELEMETRY:-}" ] && COUNT=0
+
+# --local installs from the checkout this script sits in rather than cloning, so
+# the repo's own install.sh can be a one line wrapper around this file. Two
+# installers drifting apart is what let the same bug ship twice.
+if [ "$LOCAL" = 1 ]; then
+  APP="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  [ -d "$APP/config" ] || { echo "--local: no config/ next to $APP, is this a sketchetc checkout?"; exit 1; }
+fi
 
 say()  { printf '\033[38;5;213m==>\033[0m %s\n' "$1"; }
 warn() { printf '\033[38;5;215m  ! \033[0m%s\n' "$1"; }
@@ -45,7 +55,9 @@ if [ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then
 fi
 
 # ---------- code ----------
-if [ -d "$APP/.git" ]; then
+if [ "$LOCAL" = 1 ]; then
+  say "Using this checkout ($APP)"
+elif [ -d "$APP/.git" ]; then
   say "Updating sketchetc ($BRANCH)"
   run git -C "$APP" fetch --quiet origin "$BRANCH"
   run git -C "$APP" checkout --quiet "$BRANCH"

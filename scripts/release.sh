@@ -45,7 +45,7 @@ mv "$TMP" RELEASES.md
 
 ./scripts/gen_site_data.sh >/dev/null
 ./scripts/sync_trust.sh >/dev/null
-git add VERSION RELEASES.md docs/data/site.json docs/data/trust.json docs/install.sh.sha256 README.md
+git add VERSION RELEASES.md docs/data/site.json docs/data/trust.json docs/install.sh.sha256 README.md docs/index.html
 git commit -q -m "Release v$NEW: $HEADLINE"
 git push -q origin develop
 

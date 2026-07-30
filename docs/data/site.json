@@ -1,5 +1,5 @@
 {
- "version": "1.2.2",
+ "version": "1.2.3",
  "repo": "himanshu007-creator/sketchetc",
  "replaces_total": 119,
  "widgets": [
@@ -389,13 +389,12 @@
   "retro"
  ],
  "latest": {
-  "version": "1.2.2",
-  "headline": "1.2.2 — installs no longer die on optional setup steps",
+  "version": "1.2.3",
+  "headline": "1.2.3 — one installer instead of two",
   "notes": [
-   "Fresh macOS accounts have no ~/Library/Fonts. The app icon font download could not create it, and under set -e that ended the install before the bar ever started, leaving no menu bar at all. Both installers now create the folder and treat a failed download as a warning",
-   "The ctrl+1..4 desktop hotkeys are no longer able to abort an install. If defaults or activateSettings fails you lose the shortcuts, nothing else",
-   "The repo installer used by the git clone route carried the same font bug as the one line installer and is now fixed too",
-   "CI runs both installers for real against a bare HOME instead of only a dry run, which could not execute the steps that kept breaking"
+   "The repo installer and the published installer are now a single implementation. install.sh is a thin wrapper that runs docs/install.sh with a new --local flag, which installs from the checkout instead of cloning",
+   "This removes the drift that let an identical bug be fixed in one installer and left in the other",
+   "CI asserts --local links to the checkout and never clones, and both installer paths run with the counter disabled"
   ]
  }
 }

@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.2.3 — one installer instead of two
+
+- The repo installer and the published installer are now a single implementation. install.sh is a thin wrapper that runs docs/install.sh with a new --local flag, which installs from the checkout instead of cloning
+- This removes the drift that let an identical bug be fixed in one installer and left in the other
+- CI asserts --local links to the checkout and never clones, and both installer paths run with the counter disabled
+
 ## 1.2.2 — installs no longer die on optional setup steps
 
 - Fresh macOS accounts have no ~/Library/Fonts. The app icon font download could not create it, and under set -e that ended the install before the bar ever started, leaving no menu bar at all. Both installers now create the folder and treat a failed download as a warning
