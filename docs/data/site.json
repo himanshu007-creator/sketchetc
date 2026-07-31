@@ -1,5 +1,5 @@
 {
- "version": "1.3.1",
+ "version": "1.3.2",
  "repo": "himanshu007-creator/sketchetc",
  "replaces_total": 119,
  "widgets": [
@@ -431,18 +431,11 @@
   "retro"
  ],
  "latest": {
-  "version": "1.3.1",
-  "headline": "1.3.1 — the bar becomes a drop shelf, and your settings leave the repo",
+  "version": "1.3.2",
+  "headline": "1.3.2 — fix upgrading from earlier versions",
   "notes": [
-   "Drop a file or folder anywhere on the topbar to shelve it, then drag it back off wherever you need it. The shelf holds references, so nothing is duplicated, and it only accepts drops while the shelf widget is enabled",
-   "Fixed: dragging a file off the shelf could delete the original. The shelf offered receiving apps a move operation, and moving destroys the very file a reference points to. It is copy only now",
-   "Fixed: your settings and widget toggles lived inside the git checkout, so reinstalling, re-cloning or installing on a second machine could silently change your data folder and make the journal look lost. They now live in ~/.config/sketchetc, outside anything git manages, and an existing config is migrated across automatically on first launch",
-   "Settings and widgets added in a release now appear for existing users instead of silently never showing up, without overwriting any choice you already made",
-   "Journal search across every entry and personal note, by word, date or filename",
-   "Screen recording, an on-device OCR capture, a colour picker, and a microphone mute toggle",
-   "Agents widget shows what is running, stops a runaway one, tells you when a long run finishes, and reports today's token totals per project read only from local session files",
-   "Popups share one row height, three widths and one header treatment, and all motion runs on one curve that animations=off disables entirely",
-   "Fixed: the shelf window showed one row and needed scrolling for the rest, and could not be dismissed once focus moved"
+   "Fixed: upgrading from 1.3.0 or earlier could fail. Settings and widget toggles lived inside the checkout, so a release that touched those files made the update refuse to apply, and the one line installer aborted",
+   "Both the installer and the in-app update now move your settings to ~/.config/sketchetc before updating, so your data folder, widget toggles and themes carry across untouched"
   ]
  }
 }

@@ -54,6 +54,31 @@ if [ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then
     || warn "app icon font download failed, app icons will fall back"
 fi
 
+# ---------- legacy config migration ----------
+# Older installs keep settings.conf and widgets.conf inside the checkout with
+# local edits. Any release that also touches those files makes --ff-only refuse,
+# which is how an upgrade could fail outright. The values are what matter, not
+# the files: lift them into ~/.config/sketchetc, then let the checkout go clean.
+if [ -d "$APP/.git" ] && [ "$DRY" = 0 ]; then
+  say "Preserving your settings"
+  mkdir -p "$HOME/.config/sketchetc/themes" 2>/dev/null || true
+  if [ ! -f "$HOME/.config/sketchetc/settings.conf" ] && [ -f "$APP/config/settings.conf" ]; then
+    cp "$APP/config/settings.conf" "$HOME/.config/sketchetc/settings.conf" || true
+  fi
+  if [ ! -f "$HOME/.config/sketchetc/widgets.conf" ] && [ -f "$APP/config/widgets.conf" ]; then
+    cp "$APP/config/widgets.conf" "$HOME/.config/sketchetc/widgets.conf" || true
+  fi
+  for f in .theme .iconset .notify_sound .extras_collapsed; do
+    [ -f "$APP/config/$f" ] && cp "$APP/config/$f" "$HOME/.config/sketchetc/$f" 2>/dev/null || true
+  done
+  for f in "$APP"/config/themes/*.sh; do
+    [ -e "$f" ] || continue
+    case "$(basename "$f")" in vice-city.sh|cyberpunk.sh|matrix.sh|catppuccin.sh|miami-sunset.sh) continue ;; esac
+    cp "$f" "$HOME/.config/sketchetc/themes/" 2>/dev/null || true
+  done
+  git -C "$APP" checkout -- config/settings.conf config/widgets.conf 2>/dev/null || true
+fi
+
 # ---------- code ----------
 if [ "$LOCAL" = 1 ]; then
   say "Using this checkout ($APP)"

@@ -12,6 +12,15 @@ OLD=$(cat "$APP/VERSION" 2>/dev/null || echo "0.0.0")
 # settings.conf, widgets.conf and any theme the user edited are tracked files, so
 # a --ff-only pull refuses to run the moment somebody changes a setting. Set
 # their edits aside, pull, then put them back.
+# same migration the installer does: lift legacy in-tree config out before the
+# pull, so a release that touches those files cannot block the update
+if [ -f "$APP/config/settings.conf" ] || [ -f "$APP/config/widgets.conf" ]; then
+  mkdir -p "$HOME/.config/sketchetc/themes" 2>/dev/null
+  [ -f "$HOME/.config/sketchetc/settings.conf" ] || cp "$APP/config/settings.conf" "$HOME/.config/sketchetc/settings.conf" 2>/dev/null
+  [ -f "$HOME/.config/sketchetc/widgets.conf" ]  || cp "$APP/config/widgets.conf"  "$HOME/.config/sketchetc/widgets.conf" 2>/dev/null
+  git -C "$APP" checkout -- config/settings.conf config/widgets.conf 2>/dev/null
+fi
+
 STASHED=0
 if [ -n "$(git -C "$APP" status --porcelain 2>/dev/null)" ]; then
   git -C "$APP" stash push --quiet --include-untracked -m "sketchetc local settings" 2>/dev/null && STASHED=1
