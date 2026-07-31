@@ -14,7 +14,10 @@ if [ "$SENDER" = "mouse.clicked" ]; then
         click_script="$4; sketchybar --set switches popup.drawing=off" \
       --subscribe "switches.row.$1" mouse.entered mouse.exited
   }
-  DARK=$(osascript -e 'tell application "System Events" to tell appearance preferences to get dark mode' 2>/dev/null)
+  # `defaults read -g AppleInterfaceStyle` answers this in ~5ms; the equivalent
+  # osascript measured ~275ms and this runs on every popup open
+  DARK=false
+  [ "$(defaults read -g AppleInterfaceStyle 2>/dev/null)" = "Dark" ] && DARK=true
   DESK=$(defaults read com.apple.finder CreateDesktop 2>/dev/null)
   row dark 󰔎 "$([ "$DARK" = "true" ] && echo 'Switch to light mode' || echo 'Switch to dark mode')" \
     "osascript -e 'tell application \"System Events\" to tell appearance preferences to set dark mode to not dark mode'"

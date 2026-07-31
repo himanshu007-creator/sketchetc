@@ -18,7 +18,7 @@ if [ "$SENDER" = "mouse.clicked" ]; then
 fi
 
 if [ ! -f "$STATE" ]; then
-  sketchybar --set "$NAME" icon=$ICON_POMO icon.color=$WHITE label.drawing=off
+  sketchybar --set "$NAME" icon=$ICON_POMO icon.color=$WHITE label.drawing=off width=dynamic
   exit 0
 fi
 
@@ -26,7 +26,7 @@ REM=$(( $(cat "$STATE") - $(date +%s) ))
 if [ "$REM" -le 0 ]; then
   rm -f "$STATE"
   "$CONFIG_DIR/plugins/notify.sh" pomodoro "Pomodoro" "25 minutes done · take a break"
-  sketchybar --set "$NAME" icon=$ICON_POMO icon.color=$WHITE label.drawing=off
+  sketchybar --set "$NAME" icon=$ICON_POMO icon.color=$WHITE label.drawing=off width=dynamic
 
   # ---- aura scoring for this pomodoro ----
   source "$CONFIG_DIR/plugins/aura_lib.sh"
@@ -45,5 +45,5 @@ fi
 
 COLOR=$PINK
 [ "$REM" -le 60 ] && COLOR=$RED
-sketchybar --set "$NAME" icon=$ICON_POMO icon.color=$COLOR label.drawing=on \
+sketchybar --set "$NAME" icon=$ICON_POMO icon.color=$COLOR label.drawing=on width=76 \
   label="$(printf '%02d:%02d' $((REM / 60)) $((REM % 60)))" label.color=$COLOR

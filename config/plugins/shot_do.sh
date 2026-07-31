@@ -14,8 +14,12 @@ notify() { "$CONFIG_DIR/plugins/notify.sh" shot "Screenshot" "$1"; }
 
 # an image on the pasteboard is how we tell a real capture from a cancelled one
 clipboard_has_image() {
-  case "$(osascript -e 'clipboard info' 2>/dev/null)" in
-    *PNGf*|*TIFF*) return 0 ;;
+  local info bin="$CONFIG_DIR/plugins/bin/pbinfo"
+  if [ -x "$bin" ]; then info=$("$bin" 2>/dev/null)
+  else info=$(osascript -e 'clipboard info' 2>/dev/null)
+  fi
+  case "$info" in
+    *PNGf*|*TIFF*|*png*|*tiff*) return 0 ;;
     *) return 1 ;;
   esac
 }

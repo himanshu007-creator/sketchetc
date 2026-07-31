@@ -6,19 +6,20 @@ close_popup_on_exit
 STATE="${TMPDIR:-/tmp}/sketchybar_net"
 
 if [ "$SENDER" = "mouse.clicked" ]; then
-  sketchybar --remove '/network.top\..*/' 2>/dev/null
-  sketchybar --add item network.top.head popup.network \
-    --set network.top.head icon.drawing=off background.drawing=off label="Top talkers" \
-      label.color=$CYAN label.font="$HEAD_FONT" label.padding_left=12 label.padding_right=12
+  args=(--remove '/network.top\..*/'
+        --add item network.top.head popup.network
+        --set network.top.head icon.drawing=off background.drawing=off label="Top talkers"
+          label.color=$CYAN label.font="$HEAD_FONT" label.padding_left=12 label.padding_right=12)
   i=0
-  nettop -P -x -L 1 2>/dev/null | awk -F, 'NR>1 && $5+$6 > 0 {split($2,a,"."); printf "%s %d\n", a[1], ($5+$6)/1024}' \
-    | sort -k2 -rn | head -5 | while read -r proc kb; do
+  while read -r proc kb; do
+    [ -n "$proc" ] || continue
     i=$((i + 1))
-    sketchybar --add item "network.top.$i" popup.network \
-      --set "network.top.$i" icon.drawing=off background.drawing=off \
-        label="$(printf '%-18.18s %7s' "$proc" "$(human_kb "$kb")")" \
-        label.font="$ROW_FONT" label.padding_left=12 label.padding_right=12
-  done
+    args+=(--add item "network.top.$i" popup.network
+           --set "network.top.$i" icon.drawing=off background.drawing=off
+             label="$(printf '%-18.18s %7s' "$proc" "$(human_kb "$kb")")"
+             label.font="$ROW_FONT" label.padding_left=12 label.padding_right=12)
+  done < <(nettop -P -x -L 1 2>/dev/null | awk -F, 'NR>1 && $5+$6 > 0 {split($2,a,"."); printf "%s %d\n", a[1], ($5+$6)/1024}' | sort -k2 -rn | head -5)
+  sketchybar "${args[@]}" 2>/dev/null
   toggle_popup
   exit 0
 fi

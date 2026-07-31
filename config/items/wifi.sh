@@ -8,7 +8,7 @@ sketchybar --add item wifi right \
     script="$PLUGIN_DIR/wifi.sh" \
   --subscribe wifi wifi_change mouse.entered mouse.exited mouse.clicked mouse.entered.global mouse.exited.global
 
-ROW_PROPS="icon.padding_left=10 label.padding_right=12 width=250 background.corner_radius=6 background.drawing=on background.color=$TRANSPARENT"
+ROW_PROPS="icon.padding_left=10 label.padding_right=12 width=200 background.corner_radius=6 background.drawing=on background.color=$TRANSPARENT"
 
 sketchybar --add item wifi.ip popup.wifi \
   --set wifi.ip icon=󰩟 icon.color=$CYAN label="…" $ROW_PROPS

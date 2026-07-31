@@ -10,7 +10,7 @@ source "$CONFIG_DIR/plugins/clip_lib.sh"
 capture
 
 FILES=()
-while read -r f; do FILES+=("$STORE/$f"); done < <(ls -t "$STORE" 2>/dev/null | grep -v '^\.' | head -5)
+while read -r f; do FILES+=("$STORE/$f"); done < <(clip_entries | head -"$MAX")
 
 [ "${#FILES[@]}" -eq 0 ] && { "$CONFIG_DIR/plugins/notify.sh" clipboard "Clipboard" "Nothing copied yet"; exit 0; }
 
