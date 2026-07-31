@@ -14,3 +14,4 @@ export ICON_SNAP=󰩨 ICON_SWITCHES=󱕭 ICON_SHOT=󰄄 ICON_BT=󰂰
 export ICON_UPDATE=󰇚
 export ICON_CHEV_LEFT="‹"
 export ICON_CHEV_RIGHT="›"
+export ICON_SHELF="▤"

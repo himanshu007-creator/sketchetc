@@ -15,7 +15,7 @@ sketchybar --add item shot right \
 shot_row() { # name icon label flags dest
   sketchybar --add item "shot.$1" popup.shot \
     --set "shot.$1" icon="$2" icon.color=$CYAN icon.padding_left=10 \
-      background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=260 \
+      background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 $POP_W \
       label="$3" label.font="JetBrainsMono Nerd Font:Regular:12.0" label.padding_right=12 \
       script="$CONFIG_DIR/plugins/popup_row.sh" \
       click_script="sketchybar --set shot popup.drawing=off; osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/shot_do.sh $4 > /dev/null 2>&1 &\"'" \

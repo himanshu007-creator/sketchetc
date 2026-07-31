@@ -167,6 +167,48 @@ func workTree() -> [Node] {
     return roots
 }
 
+// ---------- search ----------
+// The sidebar is built entirely from [Node], so searching does not need a new
+// view: it just swaps what the outline is showing. A result node carries the
+// file path, so selecting one goes through exactly the same read pane as
+// clicking a date does.
+func searchTree(_ q: String) -> [Node] {
+    let needle = q.lowercased().trimmingCharacters(in: .whitespaces)
+    guard !needle.isEmpty else { return workTree() }
+    let fm = FileManager.default
+
+    var files: [String] = []
+    if let e = fm.enumerator(atPath: rootDir) {
+        for case let f as String in e where f.hasSuffix(".md") { files.append(rootDir + "/" + f) }
+    }
+
+    var hits: [Node] = []
+    for path in files.sorted(by: >) {
+        let name = (path as NSString).lastPathComponent
+        // date sits in the path as yyyy/MM/dd.md, so searching "2026-07" or a
+        // filename works without opening the file at all
+        let where_ = path.replacingOccurrences(of: rootDir, with: "")
+        let dateish = where_.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ".md", with: "")
+        let body = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+
+        var snippet: String? = nil
+        if dateish.lowercased().contains(needle) || name.lowercased().contains(needle) {
+            snippet = body.split(separator: "\n").first.map(String.init) ?? ""
+        } else {
+            for line in body.split(separator: "\n") where line.lowercased().contains(needle) {
+                snippet = String(line); break
+            }
+        }
+        guard var s = snippet else { continue }
+        s = s.trimmingCharacters(in: CharacterSet(charactersIn: "# -[]x")).trimmingCharacters(in: .whitespaces)
+        if s.count > 46 { s = String(s.prefix(46)) + "…" }
+        let label = dateish.trimmingCharacters(in: CharacterSet(charactersIn: "-")) + (s.isEmpty ? "" : "  ·  " + s)
+        hits.append(Node(label, path: path))
+    }
+    if hits.isEmpty { return [Node("no matches for \"\(q)\"")] }
+    return hits
+}
+
 // ---------- personal notes ----------
 func noteFiles() -> [String] {
     let fm = FileManager.default
@@ -207,6 +249,27 @@ final class Controller: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate
         workView.isHidden = personal
         personalView.isHidden = !personal
         if personal { reloadNotes(keepSelection: true) }
+    }
+
+    // ----- search -----
+    // Guarded on the field's identity: the window has other text fields (note
+    // titles) and they must not be treated as search input.
+    func controlTextDidChange(_ note: Notification) {
+        guard let f = note.object as? NSTextField, f.identifier?.rawValue == "jsearch" else { return }
+        searchChanged(f)
+    }
+
+    @objc func searchChanged(_ sender: NSTextField) {
+        let q = sender.stringValue
+        if q.trimmingCharacters(in: .whitespaces).isEmpty {
+            reloadWork()
+            return
+        }
+        workRoots = searchTree(q)
+        outline.reloadData()
+        if !workRoots.isEmpty, workRoots[0].path != nil {
+            outline.selectRowIndexes([0], byExtendingSelection: false)
+        }
     }
 
     // ----- work -----
@@ -436,7 +499,24 @@ outline.dataSource = ctl
 outline.delegate = ctl
 outline.rowHeight = 24
 outline.indentationPerLevel = 13
-let oScroll = NSScrollView(frame: NSRect(x: PAD, y: 20, width: listW, height: H - TOP - 34))
+// search sits above the tree, where you would reach for it
+let jsearch = NSTextField(frame: NSRect(x: PAD, y: H - TOP - 40, width: listW, height: 26))
+jsearch.identifier = NSUserInterfaceItemIdentifier("jsearch")
+jsearch.placeholderString = "search entries"
+jsearch.font = monoSmall
+jsearch.textColor = textC
+jsearch.backgroundColor = panelDeep
+jsearch.drawsBackground = true
+jsearch.isBordered = false
+jsearch.focusRingType = .none
+jsearch.wantsLayer = true
+jsearch.layer?.cornerRadius = 8
+jsearch.target = ctl
+jsearch.action = #selector(Controller.searchChanged(_:))
+jsearch.delegate = ctl
+workView.addSubview(jsearch)
+
+let oScroll = NSScrollView(frame: NSRect(x: PAD, y: 20, width: listW, height: H - TOP - 68))
 oScroll.documentView = outline
 oScroll.hasVerticalScroller = true
 oScroll.wantsLayer = true

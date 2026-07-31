@@ -32,7 +32,7 @@ WHEN="in ${MINS}m"
 [ "$MINS" -le 0 ] && WHEN="now"
 if [ "$MINS" -le 2 ]; then
   COLOR=$RED
-  sketchybar --animate sin 20 --set "$NAME" icon.color=$RED icon.color=$PINK
+  sketchybar "${ANIM[@]}" --set "$NAME" icon.color=$RED icon.color=$PINK
 fi
 
 sketchybar --set "$NAME" drawing=on icon.color=$COLOR \

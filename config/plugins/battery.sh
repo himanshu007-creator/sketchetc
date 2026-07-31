@@ -1,5 +1,6 @@
 #!/bin/bash
 source "$CONFIG_DIR/plugins/hover.sh"
+source "$CONFIG_DIR/plugins/popup_lib.sh"
 hover
 close_popup_on_exit
 
@@ -33,23 +34,13 @@ if [ "$SENDER" = "mouse.clicked" ]; then
   [ "${HEALTH:-100}" -lt 80 ] 2>/dev/null && HCOL=$ORANGE
   [ "${COND:-Normal}" != "Normal" ] && HCOL=$RED
 
-  sketchybar --remove '/battery.info\..*/' \
-    --add item battery.info.time popup.battery \
-    --set battery.info.time icon=󰥔 icon.color=$ORANGE icon.padding_left=10 \
-      background.drawing=off width=225 label="$TIME_LEFT" \
-      label.font="$ROW_FONT" label.padding_right=12 \
-    --add item battery.info.cycles popup.battery \
-    --set battery.info.cycles icon=󰑓 icon.color=$ORANGE icon.padding_left=10 \
-      background.drawing=off width=225 label="$(printf '%-11s %6s' "cycles" "${CYCLES:-?}")" \
-      label.font="$ROW_FONT" label.padding_right=12 \
-    --add item battery.info.health popup.battery \
-    --set battery.info.health icon=󰁹 icon.color="$HCOL" icon.padding_left=10 \
-      background.drawing=off width=225 label="$(printf '%-11s %5s%%' "health" "${HEALTH:-?}")" \
-      label.font="$ROW_FONT" label.padding_right=12 \
-    --add item battery.info.cond popup.battery \
-    --set battery.info.cond icon=󰗠 icon.color="$HCOL" icon.padding_left=10 \
-      background.drawing=off width=225 label="$(printf '%-11s %6s' "condition" "${COND:-?}")" \
-      label.font="$ROW_FONT" label.padding_right=12 2>/dev/null
+  pop_begin battery "$POP_W"
+  pop_head "Battery"
+  pop_row  time 󰥔 "$TIME_LEFT" "" "$ORANGE"
+  pop_kv   cycles 󰑓 "cycles"    "${CYCLES:-?}"     "$ORANGE"
+  pop_kv   health 󰁹 "health"    "${HEALTH:-?}%"    "$HCOL"
+  pop_kv   cond   󰗠 "condition" "${COND:-?}"       "$HCOL"
+  pop_end
   toggle_popup
   exit 0
 fi

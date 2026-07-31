@@ -128,6 +128,20 @@
    "replaces": null
   },
   {
+   "key": "shelf",
+   "default_on": true,
+   "description": "",
+   "icons": {
+    "emoji": "1·2·3",
+    "minimal": "1·2·3",
+    "nerd": "1·2·3",
+    "outline": "1·2·3",
+    "plain": "1·2·3",
+    "retro": "1·2·3"
+   },
+   "replaces": null
+  },
+  {
    "key": "shot",
    "default_on": true,
    "description": "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, and area to text with on-device OCR. A free CleanShot-lite.",

@@ -28,7 +28,7 @@ for w in $WIDGETS; do
   args+=(--add item "widgets_menu.$w" popup.widgets_menu
          --set "widgets_menu.$w" icon="$MARK" icon.color="$COLOR" icon.padding_left=10
            label="$w" label.font="$ROW_FONT_SM" label.padding_right=12
-           background.drawing=on background.color=$TRANSPARENT background.corner_radius=5 width=240
+           background.drawing=on background.color=$TRANSPARENT background.corner_radius=5 $POP_W
            script="$CONFIG_DIR/plugins/popup_row.sh"
            click_script="$CONFIG_DIR/plugins/widget_toggle.sh $w"
          --subscribe "widgets_menu.$w" mouse.entered mouse.exited)
@@ -39,7 +39,7 @@ args+=(--add item widgets_menu.zz_help popup.widgets_menu
        --set widgets_menu.zz_help icon="?" icon.color=$CYAN icon.padding_left=12
          label="what does everything do" label.font="$ROW_FONT_SM"
          label.padding_right=12
-         background.drawing=on background.color=$TRANSPARENT background.corner_radius=5 width=240
+         background.drawing=on background.color=$TRANSPARENT background.corner_radius=5 $POP_W
          script="$CONFIG_DIR/plugins/popup_row.sh"
          click_script="sketchybar --set widgets_menu popup.drawing=off; osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/help_open.sh > /dev/null 2>&1 &\"'"
        --subscribe widgets_menu.zz_help mouse.entered mouse.exited)

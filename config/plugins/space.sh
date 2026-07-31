@@ -7,5 +7,5 @@ if [ "$SENDER" = "mouse.clicked" ]; then
   exit 0
 fi
 
-sketchybar --animate tanh 10 --set "$NAME" icon.highlight="$SELECTED" \
+sketchybar "${ANIM_FAST[@]}" --set "$NAME" icon.highlight="$SELECTED" \
   background.color=$([ "$SELECTED" = "true" ] && echo $ITEM_BG_COLOR || echo $TRANSPARENT)

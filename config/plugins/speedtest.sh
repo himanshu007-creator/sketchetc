@@ -21,7 +21,7 @@ fi
 
 case "$(head -1 "$STATE")" in
   running)
-    sketchybar --animate sin 15 --set "$NAME" icon.color=$ORANGE icon.color=$PINK
+    sketchybar "${ANIM[@]}" --set "$NAME" icon.color=$ORANGE icon.color=$PINK
     ;;
   done*)
     IFS='|' read -r _ DOWN UP TS < "$STATE"

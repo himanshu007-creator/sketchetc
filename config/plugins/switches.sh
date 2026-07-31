@@ -1,5 +1,6 @@
 #!/bin/bash
 source "$CONFIG_DIR/plugins/hover.sh"
+source "$CONFIG_DIR/plugins/popup_lib.sh"
 hover
 close_popup_on_exit
 
@@ -8,7 +9,7 @@ if [ "$SENDER" = "mouse.clicked" ]; then
   row() { # name icon label cmd
     sketchybar --add item "switches.row.$1" popup.switches \
       --set "switches.row.$1" icon="$2" icon.color=$CYAN icon.padding_left=10 \
-        background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=250 \
+        background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=$POP_W \
         label="$3" label.font="$ROW_FONT" label.padding_right=12 \
         script="$CONFIG_DIR/plugins/popup_row.sh" \
         click_script="$4; sketchybar --set switches popup.drawing=off" \

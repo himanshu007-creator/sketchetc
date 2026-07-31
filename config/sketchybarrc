@@ -1,5 +1,6 @@
 #!/bin/bash
 source "$CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/plugins/popup_lib.sh"   # POP_W* metrics for item files too
 
 PLUGIN_DIR="$CONFIG_DIR/plugins"
 ITEM_DIR="$CONFIG_DIR/items"
@@ -75,6 +76,7 @@ source "$ITEM_DIR/journal.sh"
 source "$ITEM_DIR/ai_agents.sh"
 source "$ITEM_DIR/media.sh"
 source "$ITEM_DIR/fs_guard.sh"
+source "$ITEM_DIR/shelf.sh"
 source "$ITEM_DIR/extras.sh"
 source "$ITEM_DIR/updater.sh"
 source "$ITEM_DIR/click_watch.sh"
@@ -91,3 +93,6 @@ if [ -f "$APPDIR/VERSION" ]; then
 fi
 
 sketchybar --update
+
+# whole-bar drop target (its own process; honours bar_drop in settings)
+"$PLUGIN_DIR/bar_drop.sh" restart >/dev/null 2>&1 &
