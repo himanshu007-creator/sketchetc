@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 151 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 166 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -121,6 +121,21 @@ else
   warn "swiftc missing (install Xcode command line tools) — windows and pickers will be unavailable"
 fi
 
+# ---------- user config ----------
+# Settings live in ~/.config/sketchetc, never in the checkout: a tracked config
+# file means every clone carries its own, and switching checkouts silently moved
+# people's data folder.
+say "Seeding user config"
+run mkdir -p "$HOME/.config/sketchetc/themes"
+# non-fatal: the bar seeds these itself on first run, and an install must never
+# die on a step that only saves it a second of work later
+if [ ! -f "$HOME/.config/sketchetc/settings.conf" ] && [ -f "$APP/config/settings.default.conf" ]; then
+  run cp "$APP/config/settings.default.conf" "$HOME/.config/sketchetc/settings.conf" || true
+fi
+if [ ! -f "$HOME/.config/sketchetc/widgets.conf" ] && [ -f "$APP/config/widgets.default.conf" ]; then
+  run cp "$APP/config/widgets.default.conf" "$HOME/.config/sketchetc/widgets.conf" || true
+fi
+
 # ---------- macOS bits ----------
 say "System setup"
 run defaults write NSGlobalDomain _HIHideMenuBar -bool false
@@ -193,7 +208,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect f4d35e8e28d85db932c8a8efd9d9e04b262a7951d292b13784a7b868b241228c
+shasum -a 256 install.sh    # expect 1226607493cfe2dabef007c29e9fadff66dcacf40641bc3eb9ced026425c09ea
 less install.sh             # read it
 bash install.sh
 ```
@@ -201,7 +216,7 @@ bash install.sh
 **Pin to a release** (immutable — this exact commit, forever):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.0/docs/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.1/docs/install.sh -o install.sh
 shasum -a 256 install.sh && bash install.sh
 ```
 <!-- INSTALLER:END -->
