@@ -24,6 +24,64 @@ clipboard_has_image() {
   esac
 }
 
+REC_STATE="${TMPDIR:-/tmp}/sketchetc_recording"
+
+# --- screen recording -------------------------------------------------------
+# screencapture -v records until it is interrupted, and finalises the file on
+# SIGINT. There is no interactive region picker for video, so "record area" runs
+# the native image selector once, throws the png away and reuses the rectangle
+# macOS remembers, falling back to the whole screen if that is unreadable.
+start_recording() {
+  local out region=""
+  out="$DIR/rec-$(date +%Y%m%d-%H%M%S).mov"
+  if [ "$1" = "area" ]; then
+    local tmp; tmp=$(mktemp -t shotsel).png
+    screencapture -i "$tmp" 2>/dev/null
+    [ -s "$tmp" ] || { rm -f "$tmp"; exit 0; }     # selection cancelled
+    rm -f "$tmp"
+    region=$(defaults read com.apple.screencapture "last-selection" 2>/dev/null | \
+      awk -F'[ =;]+' '/Height/{h=$3} /Width/{w=$3} /X/{x=$3} /Y/{y=$3} END{if (w>0 && h>0) printf "%d,%d,%d,%d", x, y, w, h}')
+  fi
+  if [ -n "$region" ]; then
+    screencapture -v -R"$region" "$out" >/dev/null 2>&1 &
+  else
+    screencapture -v "$out" >/dev/null 2>&1 &
+  fi
+  echo "$! $out" > "$REC_STATE"
+  sketchybar --set shot icon=$ICON_REC icon.color=$RED label="REC" label.color=$RED label.drawing=on 2>/dev/null
+  notify "Recording · click the shot icon to stop"
+}
+
+stop_recording() {
+  [ -f "$REC_STATE" ] || return 1
+  read -r pid out < "$REC_STATE"
+  rm -f "$REC_STATE"
+  kill -INT "$pid" 2>/dev/null
+  # give screencapture a moment to finalise the container
+  for _ in 1 2 3 4 5 6 7 8; do [ -s "$out" ] && break; sleep 0.4; done
+  sketchybar --set shot icon=$ICON_SHOT icon.color=$CYAN label.drawing=off 2>/dev/null
+  if [ -s "$out" ]; then
+    notify "Recording saved to $(basename "$DIR")"
+  else
+    notify "Recording produced no file, check Screen Recording permission"
+  fi
+  return 0
+}
+
+case "$1" in
+  record)     start_recording screen; exit 0 ;;
+  recordarea) start_recording area;   exit 0 ;;
+  stoprec)    stop_recording;         exit 0 ;;
+  color)
+    # native eyedropper: same loupe macOS uses, no Screen Recording grant needed
+    OUT_HEX=$("$CONFIG_DIR/plugins/bin/pick_color" 2>/dev/null) || exit 0
+    [ -z "$OUT_HEX" ] && exit 0
+    printf '%s' "${OUT_HEX%% *}" | pbcopy
+    sketchybar --trigger clip_captured 2>/dev/null
+    notify "${OUT_HEX%% *} copied"
+    exit 0 ;;
+esac
+
 # Interactive captures can take as long as the user needs, so callers launch
 # this script detached; it must not be tied to a click_script's lifetime.
 case "$1" in

@@ -44,3 +44,7 @@ export ICON_BT=󰂯
 export ICON_UPDATE=󰑓
 export ICON_CHEV_LEFT="["
 export ICON_CHEV_RIGHT="]"
+export ICON_SHELF="#"
+export ICON_MIC_ON="M"
+export ICON_MIC_OFF="m"
+export ICON_REC="R"

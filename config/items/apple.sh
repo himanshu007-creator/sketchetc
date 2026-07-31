@@ -12,7 +12,7 @@ sketchybar --add item apple left \
     script="$PLUGIN_DIR/apple.sh" \
   --subscribe apple mouse.clicked mouse.entered mouse.exited mouse.entered.global mouse.exited.global
 
-ROW_PROPS="icon.padding_left=10 label.padding_right=12 width=250 background.corner_radius=6 background.drawing=on background.color=$TRANSPARENT"
+ROW_PROPS="icon.padding_left=10 label.padding_right=12 $POP_W background.corner_radius=6 background.drawing=on background.color=$TRANSPARENT"
 
 add_row() { # name icon label click_cmd [keep_open]
   local close="; sketchybar --set apple popup.drawing=off"

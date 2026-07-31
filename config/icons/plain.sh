@@ -14,3 +14,7 @@ export ICON_SNAP="⊞" ICON_SWITCHES="⇄" ICON_SHOT="⧇" ICON_BT="ᛒ"
 export ICON_UPDATE=↑
 export ICON_CHEV_LEFT="<"
 export ICON_CHEV_RIGHT=">"
+export ICON_SHELF="S"
+export ICON_MIC_ON="mic"
+export ICON_MIC_OFF="off"
+export ICON_REC="rec"

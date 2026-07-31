@@ -1,5 +1,5 @@
 {
- "version": "1.3.0",
+ "version": "1.3.1",
  "repo": "himanshu007-creator/sketchetc",
  "replaces_total": 119,
  "widgets": [
@@ -128,9 +128,23 @@
    "replaces": null
   },
   {
+   "key": "shelf",
+   "default_on": true,
+   "description": "Park files here and drag them out somewhere else. Drop onto anywhere on the bar to shelve something; drag off the shelf icon to move the newest one. Stores references, so nothing is duplicated and a moved original is marked rather than silently broken.",
+   "icons": {
+    "emoji": "1·2·3",
+    "minimal": "1·2·3",
+    "nerd": "1·2·3",
+    "outline": "1·2·3",
+    "plain": "1·2·3",
+    "retro": "1·2·3"
+   },
+   "replaces": null
+  },
+  {
    "key": "shot",
    "default_on": true,
-   "description": "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, and area to text with on-device OCR. A free CleanShot-lite.",
+   "description": "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, area to text with on-device OCR, screen recording, and a colour picker that puts hex on the clipboard.",
    "icons": {
     "emoji": "📸",
     "minimal": "󰄀",
@@ -236,6 +250,20 @@
     "app": "Meeter",
     "price": 0
    }
+  },
+  {
+   "key": "mic",
+   "default_on": false,
+   "description": "Mute or unmute the microphone in one click, with the state visible in the bar. Read through CoreAudio so it costs milliseconds, not a quarter second.",
+   "icons": {
+    "emoji": "1·2·3",
+    "minimal": "1·2·3",
+    "nerd": "1·2·3",
+    "outline": "1·2·3",
+    "plain": "1·2·3",
+    "retro": "1·2·3"
+   },
+   "replaces": null
   },
   {
    "key": "spaces",
@@ -403,18 +431,18 @@
   "retro"
  ],
  "latest": {
-  "version": "1.3.0",
-  "headline": "1.3.0 — instant popups, menu bar icons, OCR and a prompt library",
+  "version": "1.3.1",
+  "headline": "1.3.1 — the bar becomes a drop shelf, and your settings leave the repo",
   "notes": [
-   "Speed: popups open several times faster. The clipboard widget was spending 275ms of osascript every second re-detecting copies the watcher already saw, the palette and settings are now read from a prebuilt cache instead of re-sourced on every event, popups are built in one call instead of one per row, and the aura popup replaced three python3 spawns with a single awk pass",
-   "Menu bar icons from other apps (Docker, Cursor, Dropbox) are mirrored into the bar with a chevron that collapses them into a tray. Needs Screen Recording permission",
-   "Capture area to text: on-device OCR puts the words on your clipboard instead of a picture of them",
-   "Prompt library: plain text files in your data folder, Option+P to pick and paste anywhere",
-   "Clipboard history holds 20 entries instead of 5, and the Option+V picker filters as you type",
-   "Battery popup shows cycle count, health and condition, matching the figures System Settings reports",
-   "Aura no longer goes blank on the first of the month, and the popup shows today, 7 days, 30 days and your streak in a proper column",
-   "The pomodoro pill collapses to its icon when idle instead of holding a wide empty capsule, hover borders no longer collide, and the widgets menu is alphabetical with help pinned last",
-   "Notifications containing quotes or backslashes no longer fail silently"
+   "Drop a file or folder anywhere on the topbar to shelve it, then drag it back off wherever you need it. The shelf holds references, so nothing is duplicated, and it only accepts drops while the shelf widget is enabled",
+   "Fixed: dragging a file off the shelf could delete the original. The shelf offered receiving apps a move operation, and moving destroys the very file a reference points to. It is copy only now",
+   "Fixed: your settings and widget toggles lived inside the git checkout, so reinstalling, re-cloning or installing on a second machine could silently change your data folder and make the journal look lost. They now live in ~/.config/sketchetc, outside anything git manages, and an existing config is migrated across automatically on first launch",
+   "Settings and widgets added in a release now appear for existing users instead of silently never showing up, without overwriting any choice you already made",
+   "Journal search across every entry and personal note, by word, date or filename",
+   "Screen recording, an on-device OCR capture, a colour picker, and a microphone mute toggle",
+   "Agents widget shows what is running, stops a runaway one, tells you when a long run finishes, and reports today's token totals per project read only from local session files",
+   "Popups share one row height, three widths and one header treatment, and all motion runs on one curve that animations=off disables entirely",
+   "Fixed: the shelf window showed one row and needed scrolling for the rest, and could not be dismissed once focus moved"
   ]
  }
 }

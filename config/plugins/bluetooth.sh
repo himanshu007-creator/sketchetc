@@ -23,7 +23,7 @@ if [ "$SENDER" = "mouse.clicked" ]; then
     PCT=$(echo "$BATT" | awk -F'|' -v n="$NAME_D" '$1 == n {print " · " $2}' | head -1)
     sketchybar --add item "bluetooth.row.$i" popup.bluetooth \
       --set "bluetooth.row.$i" icon="$CONN" icon.color="$COLOR" icon.padding_left=10 \
-        background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=300 \
+        background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 $POP_W_WIDE \
         label="${NAME_D}${PCT}" label.font="$ROW_FONT" label.padding_right=12 \
         script="$CONFIG_DIR/plugins/popup_row.sh" \
         click_script="if blueutil --is-connected $addr | grep -q 1; then blueutil --disconnect $addr; else blueutil --connect $addr; fi; sketchybar --set bluetooth popup.drawing=off" \

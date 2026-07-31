@@ -1,25 +1,22 @@
 #!/bin/bash
 source "$CONFIG_DIR/plugins/hover.sh"
+source "$CONFIG_DIR/plugins/popup_lib.sh"
 hover
 close_popup_on_exit
 
 STATE="${TMPDIR:-/tmp}/sketchybar_net"
 
 if [ "$SENDER" = "mouse.clicked" ]; then
-  args=(--remove '/network.top\..*/'
-        --add item network.top.head popup.network
-        --set network.top.head icon.drawing=off background.drawing=off label="Top talkers"
-          label.color=$CYAN label.font="$HEAD_FONT" label.padding_left=12 label.padding_right=12)
+  pop_begin network "$POP_W_WIDE"
+  pop_head "Top talkers"
   i=0
   while read -r proc kb; do
     [ -n "$proc" ] || continue
     i=$((i + 1))
-    args+=(--add item "network.top.$i" popup.network
-           --set "network.top.$i" icon.drawing=off background.drawing=off
-             label="$(printf '%-18.18s %7s' "$proc" "$(human_kb "$kb")")"
-             label.font="$ROW_FONT" label.padding_left=12 label.padding_right=12)
+    pop_row "t$i" 󰀂 "$(printf '%-20.20s %8s' "$proc" "$(human_kb "$kb")")" "" "$CYAN"
   done < <(nettop -P -x -L 1 2>/dev/null | awk -F, 'NR>1 && $5+$6 > 0 {split($2,a,"."); printf "%s %d\n", a[1], ($5+$6)/1024}' | sort -k2 -rn | head -5)
-  sketchybar "${args[@]}" 2>/dev/null
+  pop_empty "no traffic right now"
+  pop_end
   toggle_popup
   exit 0
 fi

@@ -94,8 +94,8 @@ aura_award() { # points  · celebrate: flash widget + voice + notification
   "$CONFIG_DIR/plugins/notify.sh" aura "Aura" "+$P aura · locked in 🔥" &
   ( source "$CONFIG_DIR/plugins/settings_lib.sh"; setting_on voice && { sleep 0.5; say -v Samantha "Plus $P aura points. You are locked in."; } ) &
   sketchybar --set aura drawing=on label="+$P ✨" label.color=$PINK icon.color=$PINK
-  sketchybar --animate sin 20 --set aura icon.y_offset=4 icon.y_offset=0
+  sketchybar "${ANIM[@]}" --set aura icon.y_offset=4 icon.y_offset=0
   sleep 4
-  sketchybar --animate tanh 30 --set aura label.color=$WHITE icon.color=$PURPLE
+  sketchybar "${ANIM[@]}" --set aura label.color=$WHITE icon.color=$PURPLE
   sketchybar --set aura label="$(aura_today)"
 }

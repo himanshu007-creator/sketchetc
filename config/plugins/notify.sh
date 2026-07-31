@@ -2,8 +2,10 @@
 # notify.sh <category> <title> <message>
 # Categories are gated by settings.conf (notify_<category>=on|off); `sound=off`
 # silences the chime. Unknown/blank category always notifies.
+source "$CONFIG_DIR/plugins/user_config.sh"
+uc_ensure
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
-SETTINGS="$CONFIG_DIR/settings.conf"
+SETTINGS="$(uc_path settings)"
 
 setting() { awk -F= -v k="$1" '$1 == k {print $2; exit}' "$SETTINGS" 2>/dev/null; }
 
@@ -28,7 +30,7 @@ if [ "$(setting sound)" = "off" ]; then
   exit 0
 fi
 
-CUSTOM=$(cat "$CONFIG_DIR/.notify_sound" 2>/dev/null)
+CUSTOM=$(cat "$(uc_state .notify_sound)" 2>/dev/null)
 if [ -n "$CUSTOM" ] && [ -f "$CUSTOM" ]; then
   osascript -e "display notification \"$MSG\" with title \"$TITLE\""
   afplay "$CUSTOM" >/dev/null 2>&1 &

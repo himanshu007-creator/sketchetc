@@ -28,7 +28,7 @@ REPLACES = {
 
 # ---- widgets: defaults from widgets.conf, prose from help_open.sh ----
 defaults = {}
-for line in open(f"{cfg}/widgets.conf"):
+for line in open(f"{cfg}/widgets.default.conf"):
     line = line.strip()
     if "=" in line and not line.startswith("#"):
         k, v = line.split("=", 1)

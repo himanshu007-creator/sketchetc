@@ -3,6 +3,8 @@
 # Picking a folder that already holds sketchetc data adopts it (so reinstalling
 # and pointing at the same folder restores your journal and aura history);
 # otherwise existing data is moved across once.
+source "$CONFIG_DIR/plugins/user_config.sh"
+uc_ensure
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 export CONFIG_DIR
 source "$CONFIG_DIR/plugins/storage_lib.sh"
@@ -22,10 +24,10 @@ if ! data_has_content "$NEW" && [ -d "$NEW/sketchetc" ] && data_has_content "$NE
 fi
 
 write_setting() { # key value
-  if grep -q "^$1=" "$CONFIG_DIR/settings.conf"; then
-    sed -i '' "s|^$1=.*|$1=$2|" "$CONFIG_DIR/settings.conf"
+  if grep -q "^$1=" "$(uc_path settings)"; then
+    sed -i '' "s|^$1=.*|$1=$2|" "$(uc_path settings)"
   else
-    echo "$1=$2" >> "$CONFIG_DIR/settings.conf"
+    echo "$1=$2" >> "$(uc_path settings)"
   fi
 }
 

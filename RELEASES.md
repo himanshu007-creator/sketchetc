@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.3.1 — the bar becomes a drop shelf, and your settings leave the repo
+
+- Drop a file or folder anywhere on the topbar to shelve it, then drag it back off wherever you need it. The shelf holds references, so nothing is duplicated, and it only accepts drops while the shelf widget is enabled
+- Fixed: dragging a file off the shelf could delete the original. The shelf offered receiving apps a move operation, and moving destroys the very file a reference points to. It is copy only now
+- Fixed: your settings and widget toggles lived inside the git checkout, so reinstalling, re-cloning or installing on a second machine could silently change your data folder and make the journal look lost. They now live in ~/.config/sketchetc, outside anything git manages, and an existing config is migrated across automatically on first launch
+- Settings and widgets added in a release now appear for existing users instead of silently never showing up, without overwriting any choice you already made
+- Journal search across every entry and personal note, by word, date or filename
+- Screen recording, an on-device OCR capture, a colour picker, and a microphone mute toggle
+- Agents widget shows what is running, stops a runaway one, tells you when a long run finishes, and reports today's token totals per project read only from local session files
+- Popups share one row height, three widths and one header treatment, and all motion runs on one curve that animations=off disables entirely
+- Fixed: the shelf window showed one row and needed scrolling for the rest, and could not be dismissed once focus moved
+
 ## 1.3.0 — instant popups, menu bar icons, OCR and a prompt library
 
 - Speed: popups open several times faster. The clipboard widget was spending 275ms of osascript every second re-detecting copies the watcher already saw, the palette and settings are now read from a prebuilt cache instead of re-sourced on every event, popups are built in one call instead of one per row, and the aura popup replaced three python3 spawns with a single awk pass

@@ -17,6 +17,9 @@ cat <<'EOF'
 
 Done — native macOS menu bar is back (it was underneath all along).
 
+Your settings and data are untouched: ~/.config/sketchetc and your data folder
+stay put, so reinstalling picks up exactly where you left off.
+
 Optional, if you want the packages gone too:
   brew uninstall sketchybar macmon
   brew untap FelixKratz/formulae

@@ -7,18 +7,20 @@
 # spawn. The cache is one flat file of assignments: no subshells, no further
 # sourcing, no greps.
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
+source "$CONFIG_DIR/plugins/user_config.sh"
+uc_ensure
 ENV_CACHE="$CONFIG_DIR/.cache/env.sh"
 
 _env_cache_stale() {
   [ -f "$ENV_CACHE" ] || return 0
   local f
   # -nt is a bash builtin, so these comparisons cost no processes
-  for f in "$CONFIG_DIR/.theme" "$CONFIG_DIR/.iconset" \
-           "$CONFIG_DIR/widgets.conf" "$CONFIG_DIR/settings.conf"; do
+  for f in "$(uc_state .theme)" "$(uc_state .iconset)" \
+           "$(uc_path widgets)" "$(uc_path settings)"; do
     [ -e "$f" ] && [ "$f" -nt "$ENV_CACHE" ] && return 0
   done
   # editing a theme or iconset in place has to invalidate it too
-  for f in "$CONFIG_DIR"/themes/*.sh "$CONFIG_DIR"/icons/*.sh; do
+  for f in "$CONFIG_DIR"/themes/*.sh "$CONFIG_DIR"/icons/*.sh "$USER_CONF_DIR"/themes/*.sh; do
     [ -e "$f" ] && [ "$f" -nt "$ENV_CACHE" ] && return 0
   done
   return 1
@@ -26,12 +28,15 @@ _env_cache_stale() {
 
 _env_cache_build() {
   local theme iconset tmp v
-  theme=$(cat "$CONFIG_DIR/.theme" 2>/dev/null || echo vice-city)
-  [ -f "$CONFIG_DIR/themes/$theme.sh" ] || theme=vice-city
-  iconset=$(cat "$CONFIG_DIR/.iconset" 2>/dev/null || echo nerd)
+  theme=$(cat "$(uc_state .theme)" 2>/dev/null || echo vice-city)
+  # a theme the user made lives in their config dir, not the checkout
+  THEME_FILE="$CONFIG_DIR/themes/$theme.sh"
+  [ -f "$THEME_FILE" ] || THEME_FILE="$USER_CONF_DIR/themes/$theme.sh"
+  [ -f "$THEME_FILE" ] || { theme=vice-city; THEME_FILE="$CONFIG_DIR/themes/vice-city.sh"; }
+  iconset=$(cat "$(uc_state .iconset)" 2>/dev/null || echo nerd)
   [ -f "$CONFIG_DIR/icons/$iconset.sh" ] || iconset=nerd
 
-  source "$CONFIG_DIR/themes/$theme.sh"
+  source "$THEME_FILE"
   source "$CONFIG_DIR/icons/$iconset.sh"
 
   mkdir -p "$CONFIG_DIR/.cache" 2>/dev/null
@@ -53,10 +58,17 @@ popup.blur_radius=0 \
 popup.background.shadow.drawing=on \
 popup.height=26"
     # widget states as one string, so widget_on is a case match not a grep
-    printf 'export WIDGETS_ON=%q\n' " $(awk -F= '$2 == "on" {printf "%s ", $1}' "$CONFIG_DIR/widgets.conf" 2>/dev/null)"
+    # A widget added in a later release is absent from an older user file. Union
+    # the two, user first, so their choices win and anything new arrives with the
+    # default the release shipped instead of silently never appearing.
+    printf 'export WIDGETS_ON=%q\n' " $(awk -F= '
+      FNR == NR { if ($1 != "") { seen[$1] = 1; if ($2 == "on") on[$1] = 1 } ; next }
+      { if ($1 != "" && !($1 in seen) && $2 == "on") on[$1] = 1 }
+      END { for (k in on) printf "%s ", k }
+    ' "$(uc_path widgets)" "$(uc_defaults widgets)" 2>/dev/null)"
     # every setting as SETTING_<key>, so setting() is a variable read not an awk
     awk -F= '/^[a-z][a-z0-9_]*=/ {printf "export SETTING_%s=%s\n", $1, $2}' \
-      "$CONFIG_DIR/settings.conf" 2>/dev/null
+      "$(uc_path settings)" 2>/dev/null
   } > "$tmp" 2>/dev/null && mv "$tmp" "$ENV_CACHE" 2>/dev/null || rm -f "$tmp" 2>/dev/null
 }
 
@@ -67,10 +79,10 @@ source "$ENV_CACHE" 2>/dev/null
 # back to reading everything directly so the bar still comes up
 if [ -z "${PINK:-}" ]; then
   export TRANSPARENT=0x00000000
-  THEME=$(cat "$CONFIG_DIR/.theme" 2>/dev/null || echo vice-city)
+  THEME=$(cat "$(uc_state .theme)" 2>/dev/null || echo vice-city)
   [ -f "$CONFIG_DIR/themes/$THEME.sh" ] || THEME=vice-city
   source "$CONFIG_DIR/themes/$THEME.sh"
-  ICONSET=$(cat "$CONFIG_DIR/.iconset" 2>/dev/null || echo nerd)
+  ICONSET=$(cat "$(uc_state .iconset)" 2>/dev/null || echo nerd)
   [ -f "$CONFIG_DIR/icons/$ICONSET.sh" ] || ICONSET=nerd
   source "$CONFIG_DIR/icons/$ICONSET.sh"
   export POPUP_PROPS="popup.background.color=0xff${POPUP_BG#0x??} \
@@ -86,7 +98,7 @@ fi
 widget_on() {
   case "$WIDGETS_ON" in
     *" $1 "*) return 0 ;;
-    "") grep -q "^$1=on" "$CONFIG_DIR/widgets.conf" 2>/dev/null ;;
+    "") grep -q "^$1=on" "$(uc_path widgets)" 2>/dev/null ;;
     *) return 1 ;;
   esac
 }

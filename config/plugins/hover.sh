@@ -2,14 +2,15 @@
 # shared interactivity helpers · source at top of every plugin.
 # also loads the active theme palette ($PINK/$CYAN/...) + iconset for all plugins.
 source "$CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/plugins/popup_lib.sh"
 
 POPUP_MARKER="${TMPDIR:-/tmp}/sketchybar_open_popup"
 
 # border glow on hover (wire only to items whose click does something)
 hover() {
   case "$SENDER" in
-    mouse.entered) sketchybar --animate tanh 8 --set "$NAME" background.border_color=$PURPLE; exit 0 ;;
-    mouse.exited)  sketchybar --animate tanh 8 --set "$NAME" background.border_color=$TRANSPARENT; exit 0 ;;
+    mouse.entered) sketchybar "${ANIM_FAST[@]}" --set "$NAME" background.border_color=$PURPLE; exit 0 ;;
+    mouse.exited)  sketchybar "${ANIM_FAST[@]}" --set "$NAME" background.border_color=$TRANSPARENT; exit 0 ;;
   esac
 }
 
@@ -34,7 +35,7 @@ toggle_popup() {
   rm -f "$POPUP_MARKER"
   if [ "$WAS_OPEN" -eq 0 ]; then
     sketchybar --set "/.*/" popup.drawing=off \
-               --animate sin 12 --set "$NAME" icon.y_offset=3 icon.y_offset=0 \
+               "${ANIM[@]}" --set "$NAME" icon.y_offset=3 icon.y_offset=0 \
                --set "$NAME" popup.drawing=on
     read -r _ _ OPEN_CLICKS _ _ _ < <("$CONFIG_DIR/plugins/bin/mouse_info" 2>/dev/null || echo "0 0 0 0 0 0")
     echo "$NAME ${OPEN_CLICKS:-0}" > "$POPUP_MARKER"

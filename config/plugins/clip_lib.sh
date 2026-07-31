@@ -3,6 +3,8 @@
 # Option+V picker needs to capture the pasteboard synchronously before it lists the
 # store: relying on the clip_watch poller alone means a copy made a moment ago can
 # be missing from the picker.
+source "$CONFIG_DIR/plugins/user_config.sh"
+uc_ensure
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 source "$CONFIG_DIR/plugins/storage_lib.sh"
 
@@ -10,7 +12,7 @@ STORE="$(clip_dir)"
 mkdir -p "$STORE"
 # how many copies to keep. Was a hardcoded 5, which is the main reason people
 # keep a dedicated clipboard manager around.
-MAX=$(awk -F= '$1 == "clip_max" {print $2; exit}' "$CONFIG_DIR/settings.conf" 2>/dev/null)
+MAX=$(awk -F= '$1 == "clip_max" {print $2; exit}' "$(uc_path settings)" 2>/dev/null)
 case "$MAX" in ''|*[!0-9]*) MAX=20 ;; esac
 
 # entries only: .h sidecars carry cached image heights and dotfiles are scratch
