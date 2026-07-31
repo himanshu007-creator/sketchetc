@@ -67,6 +67,14 @@ build_popup() {
     fi
   done < <(ls -t "$STORE" 2>/dev/null | grep -v '^\.' | grep -v '\.h$' | head -"$MAX")
 
+  args+=(--add item clipboard.row.prompts popup.clipboard
+         --set clipboard.row.prompts icon=󰛨 icon.color=$CYAN icon.padding_left=10
+           background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=340
+           label="Prompts · Option+P" label.font="$ROW_FONT" label.padding_right=12
+           script="$CONFIG_DIR/plugins/popup_row.sh"
+           click_script="sketchybar --set clipboard popup.drawing=off; osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/prompts.sh > /dev/null 2>&1 &\"'"
+         --subscribe clipboard.row.prompts mouse.entered mouse.exited)
+
   # the shortcut is the point of the widget, so say it where people will read it
   args+=(--add item clipboard.row.hint popup.clipboard
          --set clipboard.row.hint icon.drawing=off background.drawing=off

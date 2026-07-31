@@ -19,12 +19,13 @@ desc() {
     focus)     echo "Toggles Do Not Disturb. Needs a macOS Shortcut named Toggle Focus (two clicks to create in the Shortcuts app)." ;;
     temps)     echo "CPU temperature, plus fan RPM on Macs that have a fan. Reads via macmon, no admin access needed." ;;
     media)     echo "Now playing from Spotify or Music. Click to play or pause, right-click for previous, next and a progress bar." ;;
-    clipboard) echo "Your last 5 copies, text and images. Press Option+V anywhere for the picker: arrow keys and Enter, image previews included. Click entries to paste." ;;
+    extras)    echo "Menu bar icons from other apps (Docker, Cursor, Dropbox) mirrored into the bar, with a chevron that collapses them into a tray. Needs Screen Recording permission." ;;
+    clipboard) echo "Your last 20 copies, text and images. Press Option+V anywhere for the picker, then type to filter. Arrow keys and Enter to paste, image previews included. Prompts live here too." ;;
     aura)      echo "Your effort score. Pomodoros and real activity earn points. Click for totals and shareable PNG cards via Export." ;;
     journal)   echo "Daily work log that locks each day at noon the next day (hash-chained, tamper-evident), plus a personal scratchpad with autosave." ;;
     snap)      echo "Window snapping: halves, thirds, maximize, center for the frontmost window. Replaces Magnet." ;;
     switches)  echo "Quick toggles: dark mode, hide desktop icons, empty Trash, screensaver. Replaces One Switch." ;;
-    shot)      echo "Screenshot menu: area, window, full screen, clipboard, 5s timer. A free CleanShot-lite." ;;
+    shot)      echo "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, and area to text with on-device OCR. A free CleanShot-lite." ;;
     bluetooth) echo "Paired Bluetooth devices with battery where reported. Click a device to connect or disconnect." ;;
   esac
 }

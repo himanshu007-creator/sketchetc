@@ -113,6 +113,8 @@ if [ "$DRY" = 0 ]; then
 mkdir -p "$HOME/.config/skhd" 2>/dev/null || true
 grep -q clipboard_choose "$HOME/.config/skhd/skhdrc" 2>/dev/null || \
   echo 'alt - v : CONFIG_DIR=$HOME/.config/sketchybar $HOME/.config/sketchybar/plugins/clipboard_choose.sh' >> "$HOME/.config/skhd/skhdrc"
+grep -q prompts.sh "$HOME/.config/skhd/skhdrc" 2>/dev/null || \
+  echo 'alt - p : CONFIG_DIR=$HOME/.config/sketchybar $HOME/.config/sketchybar/plugins/prompts.sh' >> "$HOME/.config/skhd/skhdrc"
 fi
 # both are already-done-is-fine: skhd exits non-zero when the service file
 # exists, which under set -e used to abort every reinstall part way through

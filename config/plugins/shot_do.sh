@@ -29,13 +29,29 @@ clipboard_has_image() {
 case "$1" in
   area)     screencapture -i "$OUT" ;;
   areaclip) screencapture -ic ;;
+  areatext) screencapture -i "$OUT" ;;   # OCR'd below, the png is scratch
   window)   screencapture -iw "$OUT" ;;
   full)     screencapture -x "$OUT" ;;
   timer)    screencapture -T 5 -x "$OUT" ;;
   *) exit 0 ;;
 esac
 
-if [ "$1" = "areaclip" ]; then
+if [ "$1" = "areatext" ]; then
+  # Text beats a picture of text: this is how a screen ends up in an LLM, a
+  # terminal or a search box. All on-device, via Vision.
+  if [ -s "$OUT" ]; then
+    TEXT=$("$CONFIG_DIR/plugins/bin/ocr" "$OUT" 2>/dev/null)
+    rm -f "$OUT"
+    if [ -n "$TEXT" ]; then
+      printf '%s' "$TEXT" | pbcopy
+      sketchybar --trigger clip_captured 2>/dev/null
+      LINES=$(printf '%s\n' "$TEXT" | wc -l | tr -d ' ')
+      notify "Copied $LINES line(s) of text, ready to paste"
+    else
+      notify "No text found in that selection"
+    fi
+  fi
+elif [ "$1" = "areaclip" ]; then
   # Esc during an interactive capture copies nothing, so only claim success when
   # something actually landed on the pasteboard
   if clipboard_has_image; then

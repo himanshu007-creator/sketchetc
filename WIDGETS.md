@@ -66,3 +66,11 @@ sketchybar --set "$NAME" label="$(date +%S)s"
   `osascript -e 'do shell script "nohup cmd &"'` if you truly must.
 - **State** goes in `${TMPDIR:-/tmp}/sketchybar_<name>` files.
 - **Hide, don't error**: if your data source is missing, `--set $NAME drawing=off`.
+
+## extras
+
+Mirrors third-party menu bar icons via sketchybar's `alias` component.
+`items/extras.sh` enumerates `sketchybar --query default_menu_items`, skips the
+ones macOS already gives us, and creates an alias per remaining item.
+`plugins/extras.sh` toggles them as a group. Requires Screen Recording.
+Deny specific owners with `extras_deny=Owner1,Owner2` in `settings.conf`.

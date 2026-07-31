@@ -37,7 +37,7 @@
   {
    "key": "clipboard",
    "default_on": true,
-   "description": "Your last 5 copies, text and images. Press Option+V anywhere for the picker: arrow keys and Enter, image previews included. Click entries to paste.",
+   "description": "Your last 20 copies, text and images. Press Option+V anywhere for the picker, then type to filter. Arrow keys and Enter to paste, image previews included. Prompts live here too.",
    "icons": {
     "emoji": "📋",
     "minimal": "󰨸",
@@ -50,6 +50,20 @@
     "app": "Paste",
     "price": 30
    }
+  },
+  {
+   "key": "extras",
+   "default_on": true,
+   "description": "Menu bar icons from other apps (Docker, Cursor, Dropbox) mirrored into the bar, with a chevron that collapses them into a tray. Needs Screen Recording permission.",
+   "icons": {
+    "emoji": "1·2·3",
+    "minimal": "1·2·3",
+    "nerd": "1·2·3",
+    "outline": "1·2·3",
+    "plain": "1·2·3",
+    "retro": "1·2·3"
+   },
+   "replaces": null
   },
   {
    "key": "journal",
@@ -116,7 +130,7 @@
   {
    "key": "shot",
    "default_on": true,
-   "description": "Screenshot menu: area, window, full screen, clipboard, 5s timer. A free CleanShot-lite.",
+   "description": "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, and area to text with on-device OCR. A free CleanShot-lite.",
    "icons": {
     "emoji": "📸",
     "minimal": "󰄀",

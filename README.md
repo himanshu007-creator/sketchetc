@@ -266,6 +266,13 @@ whole bar including popups.
   `config/settings.conf`, editable by hand too.
 - **Autostarts** on login (brew services / launchd)
 
+## Menu bar icons from other apps
+
+Docker, Cursor, Dropbox and anything else that installs a menu bar icon are
+mirrored into the bar, with a chevron that collapses them into a tray. Needs
+Screen Recording permission (System Settings → Privacy & Security → Screen
+Recording → sketchybar), which is what macOS requires to draw them.
+
 ## Permissions
 
 Grant the permissions macOS asks for (Accessibility → space switching + fullscreen
