@@ -1,5 +1,5 @@
 {
- "version": "1.2.4",
+ "version": "1.3.0",
  "repo": "himanshu007-creator/sketchetc",
  "replaces_total": 119,
  "widgets": [
@@ -403,15 +403,18 @@
   "retro"
  ],
  "latest": {
-  "version": "1.2.4",
-  "headline": "1.2.4 — snips land in Option+V, releases noticed within 30 minutes",
+  "version": "1.3.0",
+  "headline": "1.3.0 — instant popups, menu bar icons, OCR and a prompt library",
   "notes": [
-   "Every capture in the shot menu now lands on the clipboard and appears in Option+V immediately, with a Snip ready to paste notification and no voice",
-   "Option+V captures the clipboard as it opens, so the thing you just copied is always in the list even if the background watcher was not running",
-   "One snip no longer creates two entries in clipboard history",
-   "Cancelling an area to clipboard capture with Esc no longer claims it succeeded, and Finder is no longer pulled to the front after every capture",
-   "New releases are noticed within 30 minutes instead of up to six hours, and still notify only once per release",
-   "The clipboard popup now mentions that Option+V opens it in any app"
+   "Speed: popups open several times faster. The clipboard widget was spending 275ms of osascript every second re-detecting copies the watcher already saw, the palette and settings are now read from a prebuilt cache instead of re-sourced on every event, popups are built in one call instead of one per row, and the aura popup replaced three python3 spawns with a single awk pass",
+   "Menu bar icons from other apps (Docker, Cursor, Dropbox) are mirrored into the bar with a chevron that collapses them into a tray. Needs Screen Recording permission",
+   "Capture area to text: on-device OCR puts the words on your clipboard instead of a picture of them",
+   "Prompt library: plain text files in your data folder, Option+P to pick and paste anywhere",
+   "Clipboard history holds 20 entries instead of 5, and the Option+V picker filters as you type",
+   "Battery popup shows cycle count, health and condition, matching the figures System Settings reports",
+   "Aura no longer goes blank on the first of the month, and the popup shows today, 7 days, 30 days and your streak in a proper column",
+   "The pomodoro pill collapses to its icon when idle instead of holding a wide empty capsule, hover borders no longer collide, and the widgets menu is alphabetical with help pinned last",
+   "Notifications containing quotes or backslashes no longer fail silently"
   ]
  }
 }
