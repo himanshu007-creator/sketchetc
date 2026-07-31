@@ -11,6 +11,13 @@ CAT="$1" TITLE="$2" MSG="$3"
 # back-compat: two-arg calls are (title, message) with no category
 if [ -z "$MSG" ]; then TITLE="$1"; MSG="$2"; CAT=""; fi
 
+# AppleScript string literals are double quoted, so a quote or a backslash
+# anywhere in a message was a syntax error and the notification simply never
+# appeared. Saving a prompt whose text contains quotes hit this immediately.
+esc() { local s=${1//\\/\\\\}; printf '%s' "${s//\"/\\\"}"; }
+TITLE=$(esc "$TITLE")
+MSG=$(esc "$MSG")
+
 if [ -n "$CAT" ]; then
   V=$(setting "notify_$CAT")
   [ "$V" = "off" ] && exit 0

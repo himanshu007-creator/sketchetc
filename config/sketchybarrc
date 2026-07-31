@@ -37,8 +37,8 @@ sketchybar --default \
   background.height=24 \
   background.border_width=1 \
   background.border_color=$TRANSPARENT \
-  padding_left=3 \
-  padding_right=3 \
+  padding_left=5 \
+  padding_right=5 \
   updates=on
 
 # ---- Items (right side: first sourced = rightmost) ----
@@ -75,6 +75,7 @@ source "$ITEM_DIR/journal.sh"
 source "$ITEM_DIR/ai_agents.sh"
 source "$ITEM_DIR/media.sh"
 source "$ITEM_DIR/fs_guard.sh"
+source "$ITEM_DIR/extras.sh"
 source "$ITEM_DIR/updater.sh"
 source "$ITEM_DIR/click_watch.sh"
 

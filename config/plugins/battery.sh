@@ -4,17 +4,52 @@ hover
 close_popup_on_exit
 
 if [ "$SENDER" = "mouse.clicked" ]; then
-  TIME_LEFT=$(pmset -g batt | grep -Eo '[0-9]+:[0-9]+ remaining' | head -1)
-  [ -z "$TIME_LEFT" ] && TIME_LEFT="calculating…"
-  CYCLES=$(ioreg -r -c AppleSmartBattery | awk '/"CycleCount" =/ {print $3}')
-  sketchybar --remove '/battery.info\..*/' 2>/dev/null
-  sketchybar \
+  PM=$(pmset -g batt)
+  TIME_LEFT=$(printf '%s' "$PM" | grep -Eo '[0-9]+:[0-9]+ remaining' | head -1)
+  if [ -z "$TIME_LEFT" ]; then
+    printf '%s' "$PM" | grep -q 'AC Power' && TIME_LEFT="on AC power" || TIME_LEFT="calculating…"
+  fi
+
+  # Health barely moves day to day and ioreg is not free, so it is cached for a
+  # day. This is the coconutBattery answer: cycles, how much of the original
+  # capacity is left, and whether the pack is still considered healthy.
+  HEALTH_CACHE="$CONFIG_DIR/.cache/battery_health"
+  if [ ! -f "$HEALTH_CACHE" ] || [ -n "$(find "$HEALTH_CACHE" -mmin +1440 2>/dev/null)" ]; then
+    mkdir -p "$CONFIG_DIR/.cache" 2>/dev/null
+    # Read the figures Apple itself reports rather than recomputing them from
+    # ioreg: deriving capacity from DesignCapacity came out 6 points below what
+    # System Settings shows, and a health number that disagrees with macOS is
+    # worse than no health number. system_profiler takes ~1-2s, which is exactly
+    # why this is cached for a day.
+    system_profiler SPPowerDataType 2>/dev/null | awk -F': *' '
+      /Cycle Count/       {cyc = $2}
+      /Condition/         {cond = $2}
+      /Maximum Capacity/  {gsub(/%/, "", $2); cap = $2}
+      END { printf "%d %d %s\n", cyc + 0, cap + 0, (cond ? cond : "Unknown") }' > "$HEALTH_CACHE" 2>/dev/null
+  fi
+  read -r CYCLES HEALTH COND < "$HEALTH_CACHE" 2>/dev/null
+
+  HCOL=$CYAN
+  [ "${HEALTH:-100}" -lt 80 ] 2>/dev/null && HCOL=$ORANGE
+  [ "${COND:-Normal}" != "Normal" ] && HCOL=$RED
+
+  sketchybar --remove '/battery.info\..*/' \
     --add item battery.info.time popup.battery \
     --set battery.info.time icon=󰥔 icon.color=$ORANGE icon.padding_left=10 \
-      background.drawing=off label="$TIME_LEFT" label.padding_right=12 \
+      background.drawing=off width=225 label="$TIME_LEFT" \
+      label.font="$ROW_FONT" label.padding_right=12 \
     --add item battery.info.cycles popup.battery \
     --set battery.info.cycles icon=󰑓 icon.color=$ORANGE icon.padding_left=10 \
-      background.drawing=off label="${CYCLES:-?} cycles" label.padding_right=12
+      background.drawing=off width=225 label="$(printf '%-11s %6s' "cycles" "${CYCLES:-?}")" \
+      label.font="$ROW_FONT" label.padding_right=12 \
+    --add item battery.info.health popup.battery \
+    --set battery.info.health icon=󰁹 icon.color="$HCOL" icon.padding_left=10 \
+      background.drawing=off width=225 label="$(printf '%-11s %5s%%' "health" "${HEALTH:-?}")" \
+      label.font="$ROW_FONT" label.padding_right=12 \
+    --add item battery.info.cond popup.battery \
+    --set battery.info.cond icon=󰗠 icon.color="$HCOL" icon.padding_left=10 \
+      background.drawing=off width=225 label="$(printf '%-11s %6s' "condition" "${COND:-?}")" \
+      label.font="$ROW_FONT" label.padding_right=12 2>/dev/null
   toggle_popup
   exit 0
 fi

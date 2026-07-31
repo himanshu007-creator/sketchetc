@@ -19,7 +19,7 @@ case "$SENDER" in
         [ "$dev" = "$CUR" ] && MARK="●" && MCOLOR=$PINK
         sketchybar --add item "volume.dev.$i" popup.volume \
           --set "volume.dev.$i" icon="$MARK" icon.color="$MCOLOR" icon.padding_left=12 \
-            background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=250 \
+            background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=190 \
             label="$dev" label.font="JetBrainsMono Nerd Font:Regular:11.0" label.padding_right=12 \
             script="$CONFIG_DIR/plugins/popup_row.sh" \
             click_script="SwitchAudioSource -t output -s '$dev'; sketchybar --set volume popup.drawing=off" \

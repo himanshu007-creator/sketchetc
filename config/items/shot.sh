@@ -23,6 +23,7 @@ shot_row() { # name icon label flags dest
 }
 shot_row area  󰩭 "Capture area"             area
 shot_row clip  󰅍 "Capture area → clipboard" areaclip
+shot_row text  󰚞 "Capture area → text (OCR)"  areatext
 shot_row win   󰖯 "Capture window"           window
 shot_row full  󰹑 "Full screen"              full
 shot_row timer 󰔛 "Full screen in 5s"        timer

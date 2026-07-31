@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 149 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 151 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -147,6 +147,8 @@ if [ "$DRY" = 0 ]; then
 mkdir -p "$HOME/.config/skhd" 2>/dev/null || true
 grep -q clipboard_choose "$HOME/.config/skhd/skhdrc" 2>/dev/null || \
   echo 'alt - v : CONFIG_DIR=$HOME/.config/sketchybar $HOME/.config/sketchybar/plugins/clipboard_choose.sh' >> "$HOME/.config/skhd/skhdrc"
+grep -q prompts.sh "$HOME/.config/skhd/skhdrc" 2>/dev/null || \
+  echo 'alt - p : CONFIG_DIR=$HOME/.config/sketchybar $HOME/.config/sketchybar/plugins/prompts.sh' >> "$HOME/.config/skhd/skhdrc"
 fi
 # both are already-done-is-fine: skhd exits non-zero when the service file
 # exists, which under set -e used to abort every reinstall part way through
@@ -191,7 +193,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect 2b64f5b9a970d3332884bc20466cb53a6aa5e9d4c17c48b8797cae8e772a0e6e
+shasum -a 256 install.sh    # expect f4d35e8e28d85db932c8a8efd9d9e04b262a7951d292b13784a7b868b241228c
 less install.sh             # read it
 bash install.sh
 ```
@@ -199,7 +201,7 @@ bash install.sh
 **Pin to a release** (immutable — this exact commit, forever):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.2.4/docs/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.0/docs/install.sh -o install.sh
 shasum -a 256 install.sh && bash install.sh
 ```
 <!-- INSTALLER:END -->
@@ -265,6 +267,13 @@ whole bar including popups.
   or spoken announcements off, control screenshot-to-clipboard. Stored in
   `config/settings.conf`, editable by hand too.
 - **Autostarts** on login (brew services / launchd)
+
+## Menu bar icons from other apps
+
+Docker, Cursor, Dropbox and anything else that installs a menu bar icon are
+mirrored into the bar, with a chevron that collapses them into a tray. Needs
+Screen Recording permission (System Settings → Privacy & Security → Screen
+Recording → sketchybar), which is what macOS requires to draw them.
 
 ## Permissions
 

@@ -1,9 +1,18 @@
-// clip_picker <file1> [file2 ...] — centered, autofocused clipboard picker.
-// ↑/↓ + Enter selects (prints the chosen path), Esc cancels, click selects,
-// clicking anywhere outside dismisses. Images render inline thumbnails.
+// clip_picker [--title T] <file1> [file2 ...] — centered, autofocused picker.
+// Type to filter, ↑/↓ + Enter selects (prints the chosen path), Esc cancels,
+// click selects, clicking anywhere outside dismisses. Images render thumbnails.
+//
+// Doubles as the prompt-library picker: same interaction, different title and
+// contents, so there is one picker to learn and one to maintain.
 import AppKit
 
-let files = Array(CommandLine.arguments.dropFirst())
+var argv = Array(CommandLine.arguments.dropFirst())
+var windowTitle = "Clipboard"
+if let i = argv.firstIndex(of: "--title"), i + 1 < argv.count {
+    windowTitle = argv[i + 1]
+    argv.removeSubrange(i...(i + 1))
+}
+let files = argv
 guard !files.isEmpty else { exit(1) }
 
 let app = NSApplication.shared
@@ -13,10 +22,30 @@ let bgColor = NSColor(calibratedRed: 0.09, green: 0.05, blue: 0.16, alpha: 1)
 let rowColor = NSColor(calibratedRed: 0.14, green: 0.09, blue: 0.25, alpha: 1)
 let selColor = NSColor(calibratedRed: 0.22, green: 0.13, blue: 0.38, alpha: 1)
 let pink = NSColor(calibratedRed: 1.0, green: 0.43, blue: 0.78, alpha: 1)
+let dim = NSColor(calibratedWhite: 0.55, alpha: 1)
 let mono = NSFont(name: "JetBrainsMono Nerd Font", size: 13) ?? .monospacedSystemFont(ofSize: 13, weight: .regular)
 
 let W: CGFloat = 480, ROW_H: CGFloat = 56, GAP: CGFloat = 8, PAD: CGFloat = 16
-let H = CGFloat(files.count) * (ROW_H + GAP) + 64
+let SEARCH_H: CGFloat = 30
+let MAX_ROWS = 7
+// previews are read once: they are what gets drawn AND what gets searched
+struct Entry { let path: String; let preview: String; let haystack: String }
+
+let entries: [Entry] = files.map { path in
+    if path.hasSuffix(".png") {
+        let d = (try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date) ?? nil
+        let f = DateFormatter(); f.dateFormat = "HH:mm"
+        return Entry(path: path, preview: "image · \(d.map { f.string(from: $0) } ?? "")", haystack: "image")
+    }
+    var text = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+    text = text.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces)
+    var short = text
+    if short.count > 44 { short = String(short.prefix(44)) + "…" }
+    return Entry(path: path, preview: short, haystack: text.lowercased())
+}
+
+let rowsShown = min(entries.count, MAX_ROWS)
+let H = CGFloat(rowsShown) * (ROW_H + GAP) + 64 + SEARCH_H + 8
 
 final class RowView: NSTableRowView {
     override func drawSelection(in dirtyRect: NSRect) {}
@@ -34,21 +63,30 @@ final class RowView: NSTableRowView {
 }
 
 final class Picker: NSObject, NSTableViewDataSource, NSTableViewDelegate {
-    var files: [String]
+    var shown: [Entry]
     var table: NSTableView!
-    init(_ f: [String]) { files = f }
+    var countLabel: NSTextField!
+    init(_ e: [Entry]) { shown = e }
 
-    func numberOfRows(in tableView: NSTableView) -> Int { files.count }
+    func filter(_ q: String) {
+        let needle = q.lowercased().trimmingCharacters(in: .whitespaces)
+        shown = needle.isEmpty ? entries : entries.filter { $0.haystack.contains(needle) }
+        table.reloadData()
+        if !shown.isEmpty { table.selectRowIndexes([0], byExtendingSelection: false) }
+        countLabel.stringValue = needle.isEmpty ? "" : "\(shown.count) of \(entries.count)"
+    }
+
+    func numberOfRows(in tableView: NSTableView) -> Int { shown.count }
     func tableView(_ t: NSTableView, heightOfRow r: Int) -> CGFloat { ROW_H + GAP }
     func tableView(_ t: NSTableView, rowViewForRow r: Int) -> NSTableRowView? { RowView() }
 
     func tableView(_ t: NSTableView, viewFor c: NSTableColumn?, row r: Int) -> NSView? {
-        let path = files[r]
+        let e = shown[r]
         let width = W - 2 * PAD
         let cell = NSView(frame: NSRect(x: 0, y: 0, width: width, height: ROW_H + GAP))
 
         var textX: CGFloat = 16
-        if path.hasSuffix(".png"), let img = NSImage(contentsOfFile: path) {
+        if e.path.hasSuffix(".png"), let img = NSImage(contentsOfFile: e.path) {
             let iv = NSImageView(frame: NSRect(x: 12, y: GAP / 2 + 6, width: 70, height: ROW_H - 12))
             iv.image = img
             iv.imageScaling = .scaleProportionallyUpOrDown
@@ -59,18 +97,7 @@ final class Picker: NSObject, NSTableViewDataSource, NSTableViewDelegate {
             textX = 94
         }
 
-        var preview: String
-        if path.hasSuffix(".png") {
-            let d = (try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date) ?? nil
-            let f = DateFormatter(); f.dateFormat = "HH:mm"
-            preview = "image · \(d.map { f.string(from: $0) } ?? "")"
-        } else {
-            preview = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
-            preview = preview.replacingOccurrences(of: "\n", with: " ")
-                             .trimmingCharacters(in: .whitespaces)
-            if preview.count > 44 { preview = String(preview.prefix(44)) + "…" }
-        }
-        let label = NSTextField(labelWithString: preview)
+        let label = NSTextField(labelWithString: e.preview)
         label.font = mono
         label.textColor = NSColor(calibratedWhite: 0.93, alpha: 1)
         label.lineBreakMode = .byTruncatingTail
@@ -82,7 +109,19 @@ final class Picker: NSObject, NSTableViewDataSource, NSTableViewDelegate {
 
     @objc func pick() {
         let r = table.selectedRow
-        if r >= 0 { print(files[r]); exit(0) }
+        if r >= 0 && r < shown.count { print(shown[r].path); exit(0) }
+    }
+}
+
+let picker = Picker(entries)
+
+// Typing goes to the search field, but the arrow keys and Enter have to keep
+// driving the list, so the field forwards those on rather than swallowing them.
+final class SearchField: NSTextField {
+    var onKey: ((UInt16) -> Bool)?
+    override func keyDown(with e: NSEvent) {
+        if onKey?(e.keyCode) == true { return }
+        super.keyDown(with: e)
     }
 }
 
@@ -97,8 +136,6 @@ final class KeyTable: NSTableView {
     }
 }
 
-let picker = Picker(files)
-
 let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: W, height: H),
                    styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
 win.titleVisibility = .hidden
@@ -108,15 +145,36 @@ win.center()
 win.backgroundColor = bgColor
 win.appearance = NSAppearance(named: .darkAqua)
 
-let title = NSTextField(labelWithString: "Clipboard")
+let title = NSTextField(labelWithString: windowTitle)
 title.font = NSFont(name: "JetBrainsMono Nerd Font Bold", size: 15) ?? .boldSystemFont(ofSize: 15)
 title.textColor = pink
-title.frame = NSRect(x: PAD + 2, y: H - 40, width: W - 2 * PAD, height: 20)
+title.frame = NSRect(x: PAD + 2, y: H - 36, width: W - 2 * PAD - 90, height: 20)
 win.contentView!.addSubview(title)
+
+let countLabel = NSTextField(labelWithString: "")
+countLabel.font = mono
+countLabel.textColor = dim
+countLabel.alignment = .right
+countLabel.frame = NSRect(x: W - PAD - 100, y: H - 34, width: 96, height: 16)
+win.contentView!.addSubview(countLabel)
+picker.countLabel = countLabel
+
+let search = SearchField(frame: NSRect(x: PAD, y: H - 36 - SEARCH_H - 6, width: W - 2 * PAD, height: SEARCH_H))
+search.placeholderString = "type to filter"
+search.font = mono
+search.textColor = NSColor(calibratedWhite: 0.95, alpha: 1)
+search.backgroundColor = rowColor
+search.drawsBackground = true
+search.isBordered = false
+search.focusRingType = .none
+search.wantsLayer = true
+search.layer?.cornerRadius = 8
+win.contentView!.addSubview(search)
 
 let col = NSTableColumn(identifier: .init("c"))
 col.width = W - 2 * PAD
-let table = KeyTable(frame: NSRect(x: PAD, y: 12, width: W - 2 * PAD, height: H - 60))
+let tableH = H - 60 - SEARCH_H - 8
+let table = KeyTable(frame: NSRect(x: PAD, y: 12, width: W - 2 * PAD, height: tableH))
 table.headerView = nil
 table.backgroundColor = .clear
 table.selectionHighlightStyle = .regular
@@ -138,6 +196,30 @@ win.contentView!.addSubview(scroll)
 
 table.selectRowIndexes([0], byExtendingSelection: false)
 
+search.onKey = { code in
+    switch code {
+    case 53: exit(1)                                  // esc
+    case 36, 76: picker.pick(); return true           // enter picks the selection
+    case 125:                                         // down
+        let n = min(table.selectedRow + 1, picker.shown.count - 1)
+        if n >= 0 { table.selectRowIndexes([n], byExtendingSelection: false); table.scrollRowToVisible(n) }
+        return true
+    case 126:                                         // up
+        let n = max(table.selectedRow - 1, 0)
+        if picker.shown.count > 0 { table.selectRowIndexes([n], byExtendingSelection: false); table.scrollRowToVisible(n) }
+        return true
+    default: return false
+    }
+}
+
+class SearchDelegate: NSObject, NSTextFieldDelegate {
+    func controlTextDidChange(_ obj: Notification) {
+        picker.filter((obj.object as? NSTextField)?.stringValue ?? "")
+    }
+}
+let searchDelegate = SearchDelegate()
+search.delegate = searchDelegate
+
 // dismiss when the user clicks anywhere outside (window loses key status).
 // Armed only after a short grace period — activation from a hotkey daemon can
 // bounce focus for a moment right at launch, which must not count as "outside".
@@ -148,7 +230,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 }
 
 win.makeKeyAndOrderFront(nil)
-win.makeFirstResponder(table)
+win.makeFirstResponder(search)
 NSApp.activate(ignoringOtherApps: true)
 app.run()
 exit(1)
