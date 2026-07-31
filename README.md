@@ -268,6 +268,14 @@ whole bar including popups.
   `config/settings.conf`, editable by hand too.
 - **Autostarts** on login (brew services / launchd)
 
+## For people working with agents
+
+The agents widget lists what is running with uptime and CPU, stops a runaway one
+on click, and tells you when a long run finishes so you can walk away from it. It
+also shows today's token totals per project, read only from the session files
+Claude Code already writes on your machine. Tokens, never a cost: the rates are
+not in those files, so any dollar figure would be invented.
+
 ## Menu bar icons from other apps
 
 Docker, Cursor, Dropbox and anything else that installs a menu bar icon are

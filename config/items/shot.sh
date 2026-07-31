@@ -27,3 +27,6 @@ shot_row text  󰚞 "Capture area → text (OCR)"  areatext
 shot_row win   󰖯 "Capture window"           window
 shot_row full  󰹑 "Full screen"              full
 shot_row timer 󰔛 "Full screen in 5s"        timer
+shot_row rec   󰑊 "Record screen"             record
+shot_row reca  󰻂 "Record area"               recordarea
+shot_row color 󰸌 "Pick a colour"             color

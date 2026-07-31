@@ -15,3 +15,6 @@ export ICON_UPDATE=󰇚
 export ICON_CHEV_LEFT="‹"
 export ICON_CHEV_RIGHT="›"
 export ICON_SHELF="▤"
+export ICON_MIC_ON="◉"
+export ICON_MIC_OFF="◎"
+export ICON_REC="●"

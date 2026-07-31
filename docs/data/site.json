@@ -130,7 +130,7 @@
   {
    "key": "shelf",
    "default_on": true,
-   "description": "",
+   "description": "Park files here and drag them out somewhere else. Drop onto anywhere on the bar to shelve something; drag off the shelf icon to move the newest one. Stores references, so nothing is duplicated and a moved original is marked rather than silently broken.",
    "icons": {
     "emoji": "1·2·3",
     "minimal": "1·2·3",
@@ -144,7 +144,7 @@
   {
    "key": "shot",
    "default_on": true,
-   "description": "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, and area to text with on-device OCR. A free CleanShot-lite.",
+   "description": "Screenshot menu: area, window, full screen, 5s timer, straight to clipboard, area to text with on-device OCR, screen recording, and a colour picker that puts hex on the clipboard.",
    "icons": {
     "emoji": "📸",
     "minimal": "󰄀",
@@ -250,6 +250,20 @@
     "app": "Meeter",
     "price": 0
    }
+  },
+  {
+   "key": "mic",
+   "default_on": false,
+   "description": "Mute or unmute the microphone in one click, with the state visible in the bar. Read through CoreAudio so it costs milliseconds, not a quarter second.",
+   "icons": {
+    "emoji": "1·2·3",
+    "minimal": "1·2·3",
+    "nerd": "1·2·3",
+    "outline": "1·2·3",
+    "plain": "1·2·3",
+    "retro": "1·2·3"
+   },
+   "replaces": null
   },
   {
    "key": "spaces",
