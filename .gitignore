@@ -17,8 +17,6 @@ config/.popup_open
 config/.iconset
 config/.notify_sound
 # user-owned config lives in ~/.config/sketchetc, never in the checkout
-config/settings.conf
-config/widgets.conf
 config/.theme
 config/.iconset
 config/.notify_sound
