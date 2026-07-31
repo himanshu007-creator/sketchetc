@@ -1,5 +1,10 @@
 # Release notes
 
+## 1.3.2 — fix upgrading from earlier versions
+
+- Fixed: upgrading from 1.3.0 or earlier could fail. Settings and widget toggles lived inside the checkout, so a release that touched those files made the update refuse to apply, and the one line installer aborted
+- Both the installer and the in-app update now move your settings to ~/.config/sketchetc before updating, so your data folder, widget toggles and themes carry across untouched
+
 ## 1.3.1 — the bar becomes a drop shelf, and your settings leave the repo
 
 - Drop a file or folder anywhere on the topbar to shelve it, then drag it back off wherever you need it. The shelf holds references, so nothing is duplicated, and it only accepts drops while the shelf widget is enabled
