@@ -47,6 +47,15 @@ func addItems(_ paths: [String]) {
     try? cur.joined(separator: "\n").write(toFile: listPath, atomically: true, encoding: .utf8)
     sketchybar(["--trigger", "shelf_changed"])
 }
+func notify(_ msg: String) {
+    let cfg = NSString(string: "~/.config/sketchybar/plugins/notify.sh").expandingTildeInPath
+    guard FileManager.default.isExecutableFile(atPath: cfg) else { return }
+    let t = Process()
+    t.executableURL = URL(fileURLWithPath: cfg)
+    t.arguments = ["shelf", "Shelf", msg]     // gated by notify_shelf in settings
+    try? t.run()
+}
+
 func sketchybar(_ args: [String]) {
     let t = Process()
     t.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -77,9 +86,14 @@ final class CatchView: NSView {
         lit = false
         guard let urls = s.draggingPasteboard.readObjects(forClasses: [NSURL.self]) as? [URL],
               !urls.isEmpty else { return false }
-        addItems(urls.map { $0.path })          // files and folders alike
+        let paths = urls.map { $0.path }
+        addItems(paths)                          // files and folders alike
         // a visible acknowledgement, so a drop never feels like it went nowhere
         sketchybar(["--animate", "sin", "18", "--set", "shelf", "icon.y_offset=5", "icon.y_offset=0"])
+        let what = paths.count == 1
+            ? (paths[0] as NSString).lastPathComponent
+            : "\(paths.count) items"
+        notify("\(what) on the shelf")
         return true
     }
 }
@@ -103,8 +117,12 @@ catcher.orderFrontRegardless()
 // ---------- grabber: drag the newest item back off the bar ----------
 final class GrabView: NSView, NSDraggingSource {
     var down: NSPoint?
+    // COPY ONLY, never .move. The shelf holds references, so a receiver that
+    // chooses "move" deletes the very file the reference points to: dragging a
+    // file off the bar once destroyed it. .generic is out for the same reason,
+    // since the receiver gets to decide what it means.
     func draggingSession(_ s: NSDraggingSession, sourceOperationMaskFor c: NSDraggingContext) -> NSDragOperation {
-        c == .outsideApplication ? [.copy, .move, .generic] : []
+        c == .outsideApplication ? .copy : []
     }
     override func mouseDown(with e: NSEvent) { down = e.locationInWindow }
     override func mouseDragged(with e: NSEvent) {

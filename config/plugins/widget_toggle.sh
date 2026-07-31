@@ -1,8 +1,10 @@
 #!/bin/bash
 # widget_toggle.sh <key> · flip a widget with the active-count cap enforced
+source "$CONFIG_DIR/plugins/user_config.sh"
+uc_ensure
 source "$CONFIG_DIR/colors.sh"
 W="$1"
-CONF="$CONFIG_DIR/widgets.conf"
+CONF="$(uc_path widgets)"
 MAX=$(awk -F= '$1 == "max_active" {print $2}' "$CONF")
 MAX=${MAX:-9}
 

@@ -14,7 +14,7 @@ sketchybar --add item theme_picker left \
     script="$PLUGIN_DIR/theme_picker.sh" \
   --subscribe theme_picker mouse.clicked mouse.entered mouse.exited mouse.entered.global mouse.exited.global
 
-CURRENT_THEME=$(cat "$CONFIG_DIR/.theme" 2>/dev/null || echo vice-city)
+CURRENT_THEME=$(cat "$(uc_state .theme)" 2>/dev/null || echo vice-city)
 # one dot per theme file, colored by that theme's own accent
 for f in "$CONFIG_DIR"/themes/*.sh; do
   t=$(basename "$f" .sh)
@@ -28,7 +28,7 @@ for f in "$CONFIG_DIR"/themes/*.sh; do
       click_script="echo $t > \$HOME/.config/sketchybar/.theme; \$HOME/.config/sketchybar/plugins/notify.sh toggles toggles sketchetc 'Theme: $t'; sketchybar --reload"
 done
 
-CURRENT_SET=$(cat "$CONFIG_DIR/.iconset" 2>/dev/null || echo nerd)
+CURRENT_SET=$(cat "$(uc_state .iconset)" 2>/dev/null || echo nerd)
 for f2 in "$CONFIG_DIR"/icons/*.sh; do
   s=$(basename "$f2" .sh)
   COLOR=0x66ffffff; [ "$s" = "$CURRENT_SET" ] && COLOR=$PINK

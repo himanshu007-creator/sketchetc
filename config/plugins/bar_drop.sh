@@ -29,6 +29,11 @@ case "${1:-restart}" in
   stop) stop; exit 0 ;;
 esac
 
+# The bar is a drop target only because the shelf exists to receive it. With the
+# widget off there is nowhere for a file to go, so the helper does not run at all
+# and a drop does nothing.
+source "$CONFIG_DIR/colors.sh"
+widget_on shelf || { stop; exit 0; }
 [ "$(setting bar_drop)" = "off" ] && { stop; exit 0; }
 [ -x "$BIN" ] || exit 0
 

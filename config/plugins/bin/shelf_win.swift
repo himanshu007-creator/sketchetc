@@ -25,11 +25,15 @@ let textC = NSColor(calibratedWhite: 0.93, alpha: 1)
 let mono = NSFont(name: "JetBrainsMono Nerd Font", size: 12.5) ?? .monospacedSystemFont(ofSize: 12.5, weight: .regular)
 
 let W: CGFloat = 340, ROW: CGFloat = 40, HEAD: CGFloat = 52, FOOT: CGFloat = 34
-let MIN_ROWS = 2, MAX_ROWS = 8
+let MIN_ROWS = 1, MAX_ROWS = 10
 // A fixed-height panel left a large empty well under a short list. Sizing to the
 // content means the shelf is exactly as big as what it holds.
 func windowHeight(_ n: Int) -> CGFloat {
-    CGFloat(max(MIN_ROWS, min(n, MAX_ROWS))) * ROW + HEAD + FOOT
+    let rows = CGFloat(max(MIN_ROWS, min(n, MAX_ROWS)))
+    let want = rows * ROW + HEAD + FOOT
+    // never taller than most of the screen, however much is shelved
+    let cap = (NSScreen.main?.visibleFrame.height ?? 800) * 0.6
+    return min(want, cap)
 }
 
 func loadList() -> [String] {
@@ -131,6 +135,17 @@ let ctl = Controller()
 final class DropView: NSView {
     var onDrop: (([String]) -> Void)?
     var highlighted = false { didSet { needsDisplay = true } }
+    // set once the subviews exist; laying out from bounds is what keeps the list
+    // the same height as the window no matter how AppKit sized the content view
+    var titleView: NSView?, countView: NSView?, scrollView: NSView?, footer: [NSView] = []
+
+    override func layout() {
+        super.layout()
+        let h = bounds.height
+        titleView?.frame = NSRect(x: 16, y: h - 34, width: 140, height: 20)
+        countView?.frame = NSRect(x: bounds.width - 150, y: h - 32, width: 134, height: 16)
+        scrollView?.frame = NSRect(x: 12, y: FOOT, width: bounds.width - 24, height: max(0, h - HEAD - FOOT))
+    }
 
     override func draw(_ r: NSRect) {
         bg.setFill(); r.fill()
@@ -176,15 +191,15 @@ for b in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
 let title = NSTextField(labelWithString: "Shelf")
 title.font = NSFont(name: "JetBrainsMono Nerd Font Bold", size: 14) ?? .boldSystemFont(ofSize: 14)
 title.textColor = pink
-title.frame = NSRect(x: 16, y: H0 - 34, width: 120, height: 20)
 content.addSubview(title)
+content.titleView = title
 
 let countLabel = NSTextField(labelWithString: "")
 countLabel.font = mono
 countLabel.textColor = dimC
 countLabel.alignment = .right
-countLabel.frame = NSRect(x: W - 150, y: H0 - 32, width: 134, height: 16)
 content.addSubview(countLabel)
+content.countView = countLabel
 ctl.countLabel = countLabel
 
 let col = NSTableColumn(identifier: .init("c"))
@@ -198,7 +213,8 @@ table.delegate = ctl
 table.rowHeight = ROW
 table.style = .plain
 table.selectionHighlightStyle = .none
-table.setDraggingSourceOperationMask(.every, forLocal: false)
+// copy only: a reference shelf must never let a receiver move the original away
+table.setDraggingSourceOperationMask(.copy, forLocal: false)
 ctl.table = table
 
 // AppKit's coordinate origin is bottom-left, so a table with fewer rows than
@@ -215,8 +231,9 @@ scroll.wantsLayer = true
 scroll.layer?.cornerRadius = 10
 scroll.hasVerticalScroller = true
 content.addSubview(scroll)
+content.scrollView = scroll
 
-let hint = NSTextField(labelWithString: "drag files in · drag out to move · esc closes")
+let hint = NSTextField(labelWithString: "drag files in · drag out to copy · esc closes")
 hint.font = NSFont(name: "JetBrainsMono Nerd Font", size: 10.5) ?? .monospacedSystemFont(ofSize: 10.5, weight: .regular)
 hint.textColor = dimC
 hint.frame = NSRect(x: 16, y: 10, width: W - 130, height: 14)
@@ -248,9 +265,7 @@ ctl.resize = {
         let f = s.visibleFrame
         win.setFrame(NSRect(x: f.maxX - W - 24, y: f.maxY - h - 8, width: W, height: h), display: true, animate: true)
     }
-    title.frame.origin.y = h - 34
-    countLabel.frame.origin.y = h - 32
-    scroll.frame = NSRect(x: 12, y: FOOT, width: W - 24, height: h - HEAD - FOOT)
+    content.needsLayout = true      // layout() repositions everything from bounds
 }
 if let s = NSScreen.main {
     let f = s.visibleFrame
@@ -258,6 +273,25 @@ if let s = NSScreen.main {
 }
 win.makeKeyAndOrderFront(nil)
 NSApp.activate(ignoringOtherApps: true)
+
+// Click anywhere outside to dismiss, the same contract every other window here
+// honours. Armed after a beat because activation can bounce focus at launch,
+// which must not count as "clicked away" (clip_picker.swift hit exactly this).
+DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+    NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,
+                                           object: win, queue: .main) { _ in exit(0) }
+    if !win.isKeyWindow { win.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
+}
+
+// A drop on the bar rewrites list.txt from another process, so an open window has
+// to notice. Polled rather than watched: a DispatchSource here needs a live fd and
+// a strong reference, and when either lapses it fails silently (clip_watch.swift
+// shipped that bug once already).
+var lastStamp = (try? FileManager.default.attributesOfItem(atPath: listPath)[.modificationDate] as? Date) ?? nil
+Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
+    let now = (try? FileManager.default.attributesOfItem(atPath: listPath)[.modificationDate] as? Date) ?? nil
+    if now != lastStamp { lastStamp = now; ctl.refresh() }
+}
 
 // Esc closes, matching every other window in the app
 NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in

@@ -87,6 +87,21 @@ else
   warn "swiftc missing (install Xcode command line tools) — windows and pickers will be unavailable"
 fi
 
+# ---------- user config ----------
+# Settings live in ~/.config/sketchetc, never in the checkout: a tracked config
+# file means every clone carries its own, and switching checkouts silently moved
+# people's data folder.
+say "Seeding user config"
+run mkdir -p "$HOME/.config/sketchetc/themes"
+# non-fatal: the bar seeds these itself on first run, and an install must never
+# die on a step that only saves it a second of work later
+if [ ! -f "$HOME/.config/sketchetc/settings.conf" ] && [ -f "$APP/config/settings.default.conf" ]; then
+  run cp "$APP/config/settings.default.conf" "$HOME/.config/sketchetc/settings.conf" || true
+fi
+if [ ! -f "$HOME/.config/sketchetc/widgets.conf" ] && [ -f "$APP/config/widgets.default.conf" ]; then
+  run cp "$APP/config/widgets.default.conf" "$HOME/.config/sketchetc/widgets.conf" || true
+fi
+
 # ---------- macOS bits ----------
 say "System setup"
 run defaults write NSGlobalDomain _HIHideMenuBar -bool false
