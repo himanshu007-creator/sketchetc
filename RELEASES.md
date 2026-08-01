@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.3.3 — theme and iconset selection applies again
+
+- Fixed: picking a theme or an icon set did nothing. The pickers wrote to a path the bar stopped reading in 1.3.1, and nothing failed loudly enough to notice
+- Every preference is now a key in your config, with one declared default for each, and there is a single way to read or write state. A picker and the bar can no longer disagree about where a setting lives
+- A theme you edited now wins over the built-in of the same name, instead of being shadowed by it
+- Upgrading preserves everything you chose: theme, icon set, notification sound, tray state, fullscreen guard opt-out and widget toggles. Settings that used to live inside the app folder, where a reinstall discarded them, are carried across automatically
+- Added scripts/test_config.sh, run before every commit and in CI, covering selection round trips, upgrade preservation and two guards that ban hardcoded config paths
+
 ## 1.3.2 — fix upgrading from earlier versions
 
 - Fixed: upgrading from 1.3.0 or earlier could fail. Settings and widget toggles lived inside the checkout, so a release that touched those files made the update refuse to apply, and the one line installer aborted
