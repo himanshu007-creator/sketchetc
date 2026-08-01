@@ -1,12 +1,21 @@
-// theme_win <themesDir> <activeTheme> <activeIconset> <bgHex> <panelHex> <a1Hex> <a2Hex>
+// theme_win <builtinThemesDir> <userThemesDir> <stateCli> <activeTheme> <activeIconset> <bgHex> <panelHex> <a1Hex> <a2Hex>
 // Theme Studio: browse themes (swatch strips), edit every color with native
 // color wells, save custom themes, delete them, and switch iconsets.
+//
+// Every path arrives as an argument and every selection is written through
+// state_cli.sh. This used to hardcode ~/.config/sketchybar/.theme, which stopped
+// being where the bar reads from: you could pick a theme and nothing happened,
+// with no error anywhere. Nothing here may know where config lives.
 import AppKit
 
-guard CommandLine.arguments.count >= 8 else { print("usage: theme_win dir active iconset bg panel a1 a2"); exit(2) }
-let themesDir = CommandLine.arguments[1]
-var activeTheme = CommandLine.arguments[2]
-let activeIconset = CommandLine.arguments[3]
+guard CommandLine.arguments.count >= 10 else {
+    print("usage: theme_win builtinDir userDir stateCli active iconset bg panel a1 a2"); exit(2)
+}
+let themesDir = CommandLine.arguments[1]        // built-in, read only
+let userThemesDir = CommandLine.arguments[2]    // everything we save goes here
+let stateCli = CommandLine.arguments[3]
+var activeTheme = CommandLine.arguments[4]
+let activeIconset = CommandLine.arguments[5]
 
 func color(_ hex: String) -> NSColor {
     var h = hex.replacingOccurrences(of: "0x", with: "")
@@ -22,8 +31,8 @@ func hexRGB(_ c: NSColor) -> String {
                   Int(round(r.redComponent * 255)), Int(round(r.greenComponent * 255)), Int(round(r.blueComponent * 255)))
 }
 
-let bg = color(CommandLine.arguments[4])
-let panel = color(CommandLine.arguments[5])
+let bg = color(CommandLine.arguments[8])
+let panel = color(CommandLine.arguments[9])
 let accent1 = color(CommandLine.arguments[6])
 let accent2 = color(CommandLine.arguments[7])
 let textC = NSColor(calibratedWhite: 0.93, alpha: 1)
@@ -42,9 +51,18 @@ struct Theme { var name: String; var colors: [String: String] }   // VAR -> 0xAA
 
 func loadThemes() -> [Theme] {
     let fm = FileManager.default
-    let names = ((try? fm.contentsOfDirectory(atPath: themesDir)) ?? []).filter { $0.hasSuffix(".sh") }.sorted()
+    // union of shipped and user themes, user first: an edited theme has to beat
+    // the built-in of the same name, which is the order the bar resolves them in
+    var seen = Set<String>()
+    var names: [String] = []
+    for dir in [userThemesDir, themesDir] {
+        for f in ((try? fm.contentsOfDirectory(atPath: dir)) ?? []).filter({ $0.hasSuffix(".sh") }).sorted()
+        where seen.insert(f).inserted { names.append(f) }
+    }
     return names.compactMap { f in
-        guard let src = try? String(contentsOfFile: themesDir + "/" + f, encoding: .utf8) else { return nil }
+        let userPath = userThemesDir + "/" + f
+        let path = FileManager.default.fileExists(atPath: userPath) ? userPath : themesDir + "/" + f
+        guard let src = try? String(contentsOfFile: path, encoding: .utf8) else { return nil }
         var colors: [String: String] = [:]
         for line in src.components(separatedBy: "\n") where line.hasPrefix("export ") {
             let kv = line.dropFirst(7).components(separatedBy: "=")
@@ -70,7 +88,8 @@ func shell(_ cmd: String) {
 func writeTheme(_ t: Theme) {
     var out = "#!/bin/bash\n# \(t.name) · made in Theme Studio\n"
     for (k, _) in ROLES { out += "export \(k)=\(t.colors[k] ?? "0xffffffff")\n" }
-    try? out.write(toFile: themesDir + "/" + t.name + ".sh", atomically: true, encoding: .utf8)
+    try? FileManager.default.createDirectory(atPath: userThemesDir, withIntermediateDirectories: true)
+    try? out.write(toFile: userThemesDir + "/" + t.name + ".sh", atomically: true, encoding: .utf8)
 }
 
 let app = NSApplication.shared
@@ -157,7 +176,7 @@ final class Ctl: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         if !BUILTIN.contains(name) {
             writeTheme(collect(named: name))     // only ever writes user themes
         }
-        shell("echo '\(name)' > \"$HOME/.config/sketchybar/.theme\"; sketchybar --reload")
+        shell("'\(stateCli)' set theme '\(name)'; sketchybar --reload")
         activeTheme = name
         themes = loadThemes()
         table.reloadData()
@@ -169,7 +188,7 @@ final class Ctl: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         // never overwrite a shipped theme: land on a free "<name>-copy[-n]"
         if BUILTIN.contains(n) { n += "-copy" }
         var k = 1
-        while FileManager.default.fileExists(atPath: themesDir + "/" + n + ".sh") {
+        while FileManager.default.fileExists(atPath: userThemesDir + "/" + n + ".sh") || FileManager.default.fileExists(atPath: themesDir + "/" + n + ".sh") {
             k += 1
             n = n.hasSuffix("-copy") ? n + "-2" : n.replacingOccurrences(of: #"-\d+$"#, with: "", options: .regularExpression) + "-\(k)"
         }
@@ -184,9 +203,11 @@ final class Ctl: NSObject, NSTableViewDataSource, NSTableViewDelegate {
     @objc func deleteTheme() {
         let th = themes[current]
         guard !BUILTIN.contains(th.name) else { return }
-        try? FileManager.default.removeItem(atPath: themesDir + "/" + th.name + ".sh")
+        try? FileManager.default.removeItem(atPath: userThemesDir + "/" + th.name + ".sh")
         if activeTheme == th.name {
-            shell("echo 'vice-city' > \"$HOME/.config/sketchybar/.theme\"; sketchybar --reload")
+            // reset clears the key so the declared default applies, rather than
+            // this file deciding independently what the default theme is
+            shell("'\(stateCli)' clear theme; sketchybar --reload")
             activeTheme = "vice-city"
         }
         themes = loadThemes()
@@ -194,7 +215,7 @@ final class Ctl: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         table.selectRowIndexes([0], byExtendingSelection: false)
     }
     @objc func setIconset(_ b: NSButton) {
-        shell("echo '\(b.alternateTitle)' > \"$HOME/.config/sketchybar/.iconset\"; sketchybar --reload")
+        shell("'\(stateCli)' set iconset '\(b.alternateTitle)'; sketchybar --reload")
     }
     @objc func doClose() { exit(0) }
     @objc func openSettings() {

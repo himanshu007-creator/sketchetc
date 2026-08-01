@@ -30,7 +30,7 @@ if [ "$(setting sound)" = "off" ]; then
   exit 0
 fi
 
-CUSTOM=$(cat "$(uc_state .notify_sound)" 2>/dev/null)
+CUSTOM=$(state_get notify_sound)
 if [ -n "$CUSTOM" ] && [ -f "$CUSTOM" ]; then
   osascript -e "display notification \"$MSG\" with title \"$TITLE\""
   afplay "$CUSTOM" >/dev/null 2>&1 &

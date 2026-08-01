@@ -31,6 +31,9 @@ jobs:
           COUNT=$(find "$TMPH" -type f | wc -l | tr -d ' ')
           [ "$COUNT" = "0" ] || (echo "dry run wrote $COUNT files"; exit 1)
           echo "dry run is clean"
+      - name: Config state machine tests
+        run: ./scripts/test_config.sh
+
       - name: Checksum matches the published one
         run: |
           shasum -a 256 docs/install.sh | awk '{print $1"  install.sh"}' > /tmp/sum

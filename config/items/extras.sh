@@ -9,22 +9,22 @@
 # Requires Screen Recording permission: aliases are drawn by capturing the real
 # menu bar item. Without it, `--query default_menu_items` returns an error and we
 # say so once rather than silently showing nothing.
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/user_config.sh"
 widget_on extras || return 0
 
-STATE="$CONFIG_DIR/.extras_collapsed"
-[ -f "$STATE" ] || printf '%s' "$(setting extras_collapsed)" > "$STATE" 2>/dev/null
+
 
 MENU_ITEMS=$(sketchybar --query default_menu_items 2>/dev/null)
 if [ -z "$MENU_ITEMS" ] || [[ "$MENU_ITEMS" == *"Permissions not given"* ]]; then
   # one actionable nudge, not a silent no-op
-  if [ ! -f "$CONFIG_DIR/.extras_nagged" ]; then
-    touch "$CONFIG_DIR/.extras_nagged"
+  if [ ! -f "$(uc_runtime .extras_nagged)" ]; then
+    touch "$(uc_runtime .extras_nagged)"
     "$PLUGIN_DIR/notify.sh" toggles "Menu bar icons" \
       "Grant Screen Recording to sketchybar to mirror Docker, Cursor and friends" &
   fi
   return 0
 fi
-rm -f "$CONFIG_DIR/.extras_nagged"
+rm -f "$(uc_runtime .extras_nagged)"
 
 # macOS' own extras are already covered by our native widgets, so mirroring them
 # would just duplicate what the bar shows. Anything else is fair game.
@@ -45,7 +45,7 @@ done < <(printf '%s\n' "$MENU_ITEMS" | tr -d '"[]' | tr ',' '\n' | sed 's/^ *//;
 
 [ "${#ALIASES[@]}" -eq 0 ] && return 0
 
-COLLAPSED=$(cat "$STATE" 2>/dev/null)
+COLLAPSED=$(state_get extras_collapsed)
 DRAW=on; CHEV=$ICON_CHEV_LEFT
 [ "$COLLAPSED" = "on" ] && { DRAW=off; CHEV=$ICON_CHEV_RIGHT; }
 

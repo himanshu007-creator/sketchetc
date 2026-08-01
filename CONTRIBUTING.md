@@ -23,3 +23,12 @@ every push to production.
 sketchetc is CC BY-NC-ND 4.0. Fork it and open a pull request here as much as
 you like — that is welcome. What the licence rules out is distributing a
 modified sketchetc as a separate release, or charging anyone for it.
+
+## Config tests
+
+`scripts/test_config.sh` covers the state machine: selection round trips, declared
+defaults, user themes beating built-ins, upgrades preserving every preference, and
+two static guards banning hardcoded config paths and writes into the checkout.
+
+Enable the pre-commit hook with `git config core.hooksPath .githooks`. CI runs the
+same script, so the guard holds whether or not the hook is installed.

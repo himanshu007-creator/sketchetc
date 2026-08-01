@@ -112,6 +112,9 @@ else
   warn "swiftc missing (install Xcode command line tools) — windows and pickers will be unavailable"
 fi
 
+# contributors get the pre-commit guard; harmless for everyone else
+[ -d "$APP/.githooks" ] && run git -C "$APP" config core.hooksPath .githooks || true
+
 # ---------- user config ----------
 # Settings live in ~/.config/sketchetc, never in the checkout: a tracked config
 # file means every clone carries its own, and switching checkouts silently moved

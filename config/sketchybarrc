@@ -86,9 +86,9 @@ source "$ITEM_DIR/click_watch.sh"
 APPDIR=$(dirname "$(readlink "$HOME/.config/sketchybar" 2>/dev/null || echo "$CONFIG_DIR")")
 if [ -f "$APPDIR/VERSION" ]; then
   V=$(cat "$APPDIR/VERSION")
-  if [ "$V" != "$(cat "$CONFIG_DIR/.last_seen_version" 2>/dev/null)" ]; then
-    PREV=$(cat "$CONFIG_DIR/.last_seen_version" 2>/dev/null)
-    echo "$V" > "$CONFIG_DIR/.last_seen_version"
+  PREV=$("$PLUGIN_DIR/state_cli.sh" get last_seen_version)
+  if [ "$V" != "$PREV" ]; then
+    "$PLUGIN_DIR/state_cli.sh" set last_seen_version "$V"
     [ -n "$PREV" ] && (osascript -e "do shell script \"nohup $CONFIG_DIR/plugins/release_open.sh $PREV > /dev/null 2>&1 &\"" &)
   fi
 fi

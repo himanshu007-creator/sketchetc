@@ -15,8 +15,7 @@ _env_cache_stale() {
   [ -f "$ENV_CACHE" ] || return 0
   local f
   # -nt is a bash builtin, so these comparisons cost no processes
-  for f in "$(uc_state .theme)" "$(uc_state .iconset)" \
-           "$(uc_path widgets)" "$(uc_path settings)"; do
+  for f in "$(uc_path settings)" "$(uc_path widgets)"; do
     [ -e "$f" ] && [ "$f" -nt "$ENV_CACHE" ] && return 0
   done
   # editing a theme or iconset in place has to invalidate it too
@@ -28,12 +27,21 @@ _env_cache_stale() {
 
 _env_cache_build() {
   local theme iconset tmp v
-  theme=$(cat "$(uc_state .theme)" 2>/dev/null || echo vice-city)
-  # a theme the user made lives in their config dir, not the checkout
-  THEME_FILE="$CONFIG_DIR/themes/$theme.sh"
-  [ -f "$THEME_FILE" ] || THEME_FILE="$USER_CONF_DIR/themes/$theme.sh"
-  [ -f "$THEME_FILE" ] || { theme=vice-city; THEME_FILE="$CONFIG_DIR/themes/vice-city.sh"; }
-  iconset=$(cat "$(uc_state .iconset)" 2>/dev/null || echo nerd)
+  # No fallback literal here: the default is declared in settings.default.conf,
+  # so this file and theme_win cannot drift apart about what "default" means.
+  theme=$(state_get theme)
+  # A theme the user edited wins over a same-named file in the checkout. The
+  # other order let a stale in-tree copy shadow the user's own, so the studio
+  # showed one set of colours and the bar drew another.
+  THEME_FILE="$USER_CONF_DIR/themes/$theme.sh"
+  [ -f "$THEME_FILE" ] || THEME_FILE="$CONFIG_DIR/themes/$theme.sh"
+  if [ ! -f "$THEME_FILE" ]; then
+    theme=$(awk -F= '$1 == "theme" {print $2; exit}' "$(uc_defaults settings)" 2>/dev/null)
+    [ -n "$theme" ] || theme=vice-city
+    THEME_FILE="$CONFIG_DIR/themes/$theme.sh"
+  fi
+  iconset=$(state_get iconset)
+  [ -f "$CONFIG_DIR/icons/$iconset.sh" ] || iconset=$(awk -F= '$1 == "iconset" {print $2; exit}' "$(uc_defaults settings)" 2>/dev/null)
   [ -f "$CONFIG_DIR/icons/$iconset.sh" ] || iconset=nerd
 
   source "$THEME_FILE"
@@ -79,10 +87,12 @@ source "$ENV_CACHE" 2>/dev/null
 # back to reading everything directly so the bar still comes up
 if [ -z "${PINK:-}" ]; then
   export TRANSPARENT=0x00000000
-  THEME=$(cat "$(uc_state .theme)" 2>/dev/null || echo vice-city)
-  [ -f "$CONFIG_DIR/themes/$THEME.sh" ] || THEME=vice-city
-  source "$CONFIG_DIR/themes/$THEME.sh"
-  ICONSET=$(cat "$(uc_state .iconset)" 2>/dev/null || echo nerd)
+  THEME=$(state_get theme)
+  TF="$USER_CONF_DIR/themes/$THEME.sh"
+  [ -f "$TF" ] || TF="$CONFIG_DIR/themes/$THEME.sh"
+  [ -f "$TF" ] || { THEME=vice-city; TF="$CONFIG_DIR/themes/vice-city.sh"; }
+  source "$TF"
+  ICONSET=$(state_get iconset)
   [ -f "$CONFIG_DIR/icons/$ICONSET.sh" ] || ICONSET=nerd
   source "$CONFIG_DIR/icons/$ICONSET.sh"
   export POPUP_PROPS="popup.background.color=0xff${POPUP_BG#0x??} \
