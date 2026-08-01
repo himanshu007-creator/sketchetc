@@ -9,7 +9,11 @@
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 source "$CONFIG_DIR/plugins/user_config.sh"
 uc_ensure
-ENV_CACHE="$CONFIG_DIR/.cache/env.sh"
+# Keyed to the user config dir, not just CONFIG_DIR. The cache's *contents*
+# depend on which config it was built from, so one cache file shared across
+# different SKETCHETC_CONFIG values hands back another run's palette. The test
+# suite tripped over exactly that.
+ENV_CACHE="$CONFIG_DIR/.cache/env$(printf '%s' "$USER_CONF_DIR" | cksum | cut -d' ' -f1).sh"
 
 _env_cache_stale() {
   [ -f "$ENV_CACHE" ] || return 0
