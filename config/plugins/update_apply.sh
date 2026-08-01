@@ -1,5 +1,6 @@
 #!/bin/bash
 # Pull the release branch, rebuild helpers, reload, then show what shipped.
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/user_config.sh"
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 export CONFIG_DIR
 source "$CONFIG_DIR/plugins/settings_lib.sh"
@@ -43,9 +44,9 @@ fi
 CONFIG_DIR="$APP/config" "$APP/config/plugins/build.sh"
 
 NEW=$(cat "$APP/VERSION" 2>/dev/null || echo "$OLD")
-rm -f "$CONFIG_DIR"/.update_notified_* "$CONFIG_DIR/.update_skip"
+rm -f "$USER_CONF_DIR"/state/.update_notified_*; state_clear update_skip
 sketchybar --reload
 sleep 2
 "$CONFIG_DIR/plugins/notify.sh" update "sketchetc updated" "Now on v$NEW"
-echo "$NEW" > "$CONFIG_DIR/.last_seen_version"
+echo "$NEW" > "$(uc_runtime .last_seen_version)"
 "$CONFIG_DIR/plugins/release_open.sh" "$OLD" &

@@ -1,7 +1,8 @@
 #!/bin/bash
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/user_config.sh"
 source "$CONFIG_DIR/plugins/hover.sh"
 
-LOC_CACHE="$CONFIG_DIR/.loc"
+LOC_CACHE="$(uc_runtime .loc)"
 [ -f "$LOC_CACHE" ] || curl -s --max-time 5 ipinfo.io/loc > "$LOC_CACHE" 2>/dev/null
 LOC=$(cat "$LOC_CACHE" 2>/dev/null)
 LAT="${LOC%,*}" LON="${LOC#*,}"

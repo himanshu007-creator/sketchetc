@@ -1,0 +1,27 @@
+#!/bin/bash
+# Config state machine guard.
+#
+# Theme and iconset selection broke because a writer and a reader disagreed about
+# where state lives, and nothing failed loudly enough to notice. These tests are
+# cheap; run them before the commit rather than after the release.
+#
+# Enable with: git config core.hooksPath .githooks   (install.sh does this)
+REPO="$(git rev-parse --show-toplevel)"
+[ -x "$REPO/scripts/test_config.sh" ] || exit 0
+
+if ! "$REPO/scripts/test_config.sh" >/tmp/sketchetc_precommit.log 2>&1; then
+  echo
+  echo "config tests failed, commit blocked:"
+  grep -E 'FAIL|passed' /tmp/sketchetc_precommit.log | sed 's/^/  /'
+  echo
+  echo "full output: /tmp/sketchetc_precommit.log"
+  echo "override once with: git commit --no-verify"
+  exit 1
+fi
+
+# shell must parse too: a syntax error here takes the whole bar down
+for f in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.sh$|sketchybarrc$'); do
+  [ -f "$REPO/$f" ] || continue
+  bash -n "$REPO/$f" || { echo "syntax error in $f"; exit 1; }
+done
+exit 0

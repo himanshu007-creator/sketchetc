@@ -3,10 +3,11 @@
 # reserve space there), so convert any fullscreen window into a fill-below-the-
 # bar window. Toggle off via the apple menu (flag file) for real fullscreen.
 # Requires the Accessibility grant for sketchybar · prompts once if missing.
-[ -f "$CONFIG_DIR/.fs_guard_off" ] && exit 0
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/user_config.sh"
+[ "$(state_get fs_guard)" = "off" ] && exit 0
 
-LOG="$CONFIG_DIR/.fs_guard.log"
-PROMPTED="$CONFIG_DIR/.fs_guard_prompted"
+LOG="$(uc_runtime fs_guard.log)"
+PROMPTED="$(uc_runtime .fs_guard_prompted)"
 BARH=30
 
 # screen size from our own helper · no Automation/Finder permission needed

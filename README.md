@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 191 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 194 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -146,6 +146,9 @@ else
   warn "swiftc missing (install Xcode command line tools) — windows and pickers will be unavailable"
 fi
 
+# contributors get the pre-commit guard; harmless for everyone else
+[ -d "$APP/.githooks" ] && run git -C "$APP" config core.hooksPath .githooks || true
+
 # ---------- user config ----------
 # Settings live in ~/.config/sketchetc, never in the checkout: a tracked config
 # file means every clone carries its own, and switching checkouts silently moved
@@ -233,7 +236,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect b195ac61dae16451af90d2bd0db47780cdbc06852ce8a572763eb373d4b45b0f
+shasum -a 256 install.sh    # expect 027726f6e77c3672d48263e00b65379dedee9df0e0fa2db2608aa6bc1348cc4d
 less install.sh             # read it
 bash install.sh
 ```
@@ -241,7 +244,7 @@ bash install.sh
 **Pin to a release** (immutable — this exact commit, forever):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.2/docs/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.3/docs/install.sh -o install.sh
 shasum -a 256 install.sh && bash install.sh
 ```
 <!-- INSTALLER:END -->

@@ -1,6 +1,7 @@
 #!/bin/bash
 # 󰏘 → one-row popover: theme color dots (dynamic, includes custom themes) +
 # iconset switcher + Theme Studio launcher.
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/user_config.sh"
 sketchybar --add item theme_picker left \
   --set theme_picker \
     icon=$ICON_THEME \
@@ -14,7 +15,7 @@ sketchybar --add item theme_picker left \
     script="$PLUGIN_DIR/theme_picker.sh" \
   --subscribe theme_picker mouse.clicked mouse.entered mouse.exited mouse.entered.global mouse.exited.global
 
-CURRENT_THEME=$(cat "$(uc_state .theme)" 2>/dev/null || echo vice-city)
+CURRENT_THEME=$(cat "$(state_get theme)" 2>/dev/null || echo vice-city)
 # one dot per theme file, colored by that theme's own accent
 for f in "$CONFIG_DIR"/themes/*.sh; do
   t=$(basename "$f" .sh)
@@ -25,10 +26,10 @@ for f in "$CONFIG_DIR"/themes/*.sh; do
     --set "theme_picker.$t" icon="$DOT" icon.color="$c" \
       icon.font="JetBrainsMono Nerd Font:Bold:20.0" \
       icon.padding_left=6 icon.padding_right=6 label.drawing=off background.drawing=off \
-      click_script="echo $t > \$HOME/.config/sketchybar/.theme; \$HOME/.config/sketchybar/plugins/notify.sh toggles toggles sketchetc 'Theme: $t'; sketchybar --reload"
+      click_script="\$CONFIG_DIR/plugins/state_cli.sh set theme $t; \$HOME/.config/sketchybar/plugins/notify.sh toggles toggles sketchetc 'Theme: $t'; sketchybar --reload"
 done
 
-CURRENT_SET=$(cat "$(uc_state .iconset)" 2>/dev/null || echo nerd)
+CURRENT_SET=$(cat "$(state_get iconset)" 2>/dev/null || echo nerd)
 for f2 in "$CONFIG_DIR"/icons/*.sh; do
   s=$(basename "$f2" .sh)
   COLOR=0x66ffffff; [ "$s" = "$CURRENT_SET" ] && COLOR=$PINK
@@ -36,7 +37,7 @@ for f2 in "$CONFIG_DIR"/icons/*.sh; do
     --set "theme_picker.set_$s" icon.drawing=off label="$s" label.color="$COLOR" \
       label.font="JetBrainsMono Nerd Font:Bold:11.0" \
       label.padding_left=8 label.padding_right=8 background.drawing=off \
-      click_script="echo $s > \$HOME/.config/sketchybar/.iconset; \$HOME/.config/sketchybar/plugins/notify.sh toggles toggles sketchetc 'Icons: $s'; sketchybar --reload"
+      click_script="\$CONFIG_DIR/plugins/state_cli.sh set iconset $s; \$HOME/.config/sketchybar/plugins/notify.sh toggles toggles sketchetc 'Icons: $s'; sketchybar --reload"
 done
 
 # Theme Studio launcher (detached: the window must outlive the click)
