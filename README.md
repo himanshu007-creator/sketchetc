@@ -258,7 +258,7 @@ bash install.sh
 **Pin to a release** (immutable — this exact commit, forever):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.7/docs/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.8/docs/install.sh -o install.sh
 shasum -a 256 install.sh && bash install.sh
 ```
 <!-- INSTALLER:END -->

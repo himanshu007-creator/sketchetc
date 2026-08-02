@@ -1,5 +1,5 @@
 {
- "version": "1.3.7",
+ "version": "1.3.8",
  "repo": "himanshu007-creator/sketchetc",
  "replaces_total": 119,
  "widgets": [
@@ -431,12 +431,10 @@
   "retro"
  ],
  "latest": {
-  "version": "1.3.7",
-  "headline": "1.3.7 — Fixes for installs and upgrades",
+  "version": "1.3.8",
+  "headline": "1.3.8 — Update prompt fix",
   "notes": [
-   "New installs no longer inherit a data folder path from the developer's machine",
-   "Upgrading from 1.3.5 could fail with a git error and silently leave you on the old version, fixed",
-   "Skip this version now actually skips"
+   "Choosing Not now on the update prompt no longer installs the update anyway"
   ]
  }
 }

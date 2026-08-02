@@ -1,5 +1,9 @@
 # Release notes
 
+## 1.3.8 — Update prompt fix
+
+- Choosing Not now on the update prompt no longer installs the update anyway
+
 ## 1.3.7 — Fixes for installs and upgrades
 
 - New installs no longer inherit a data folder path from the developer's machine
