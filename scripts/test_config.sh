@@ -186,6 +186,12 @@ WRITES=$(grep -rn --include='*.sh' -E '>\s*"?\$\{?CONFIG_DIR\}?/\.[a-z_]+|touch 
         "$REPO/config" 2>/dev/null | grep -v '\.cache' | grep -vE ':\s*(//|#)')
 is "no state is written into the checkout" "" "$WRITES"
 
+# colors.sh legitimately writes its env cache under config/.cache, which is why
+# the grep above skips it. The danger is the generated file getting COMMITTED:
+# `git add -A` picked two up, they shipped in the release tarball carrying one
+# machine's widget list and palette, and shellcheck failed on generated syntax.
+is "generated caches stay untracked" "" "$(git -C "$REPO" ls-files config/.cache 2>/dev/null)"
+
 echo
 printf '%d passed, %d failed, %d skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" -eq 0 ]

@@ -1,5 +1,5 @@
 {
- "version": "1.3.5",
+ "version": "1.3.6",
  "repo": "himanshu007-creator/sketchetc",
  "replaces_total": 119,
  "widgets": [
@@ -431,12 +431,10 @@
   "retro"
  ],
  "latest": {
-  "version": "1.3.5",
-  "headline": "1.3.5 — Notifications you can actually control",
+  "version": "1.3.6",
+  "headline": "1.3.6 — Release hygiene fix",
   "notes": [
-   "Every notification type is now sound, silent or off on its own",
-   "AI agent completion is its own category, on by default, so you can quiet it without losing everything else",
-   "Shelf drops and new release alerts finally appear in Settings"
+   "v1.3.5 shipped a generated cache file by mistake, removed"
   ]
  }
 }

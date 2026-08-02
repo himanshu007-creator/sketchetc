@@ -21,3 +21,4 @@ config/.theme
 config/.iconset
 config/.notify_sound
 config/.extras_collapsed
+config/.cache/
