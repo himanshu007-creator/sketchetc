@@ -9,9 +9,17 @@ APP=$(dirname "$(readlink "$HOME/.config/sketchybar" 2>/dev/null || echo "$CONFI
 CHANNEL=$(setting channel); CHANNEL=${CHANNEL:-production}
 QUIET="${1:-}"   # "quiet" skips the up-to-date dialog, used by the pill
 
-ask() {  # ask <title> <body> <ok-button>
-  osascript -e "display dialog \"$2\" with title \"$1\" \
-    buttons {\"Not now\", \"$3\"} default button \"$3\" with icon note" >/dev/null 2>&1
+ask() {  # ask <title> <body> <ok-button> -> 0 only if the user pressed <ok-button>
+  # This used to return osascript's exit status and throw the output away. Neither
+  # button is named "Cancel", so AppleScript had no cancel button to raise -128 on:
+  # both buttons exited 0 and "Not now" installed the update anyway. Read the
+  # button back instead, and treat anything unexpected as no, so a broken dialog
+  # can never mean yes.
+  local out
+  out=$(osascript -e "display dialog \"$2\" with title \"$1\" \
+    buttons {\"Not now\", \"$3\"} default button \"$3\" cancel button \"Not now\" with icon note" 2>/dev/null) || return 1
+  case "$out" in *"button returned:$3"*) return 0 ;; esac
+  return 1
 }
 tell() {
   osascript -e "display dialog \"$2\" with title \"$1\" buttons {\"OK\"} default button \"OK\" with icon note" >/dev/null 2>&1
