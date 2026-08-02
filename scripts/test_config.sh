@@ -200,6 +200,23 @@ is "generated caches stay untracked" "" "$(git -C "$REPO" ls-files config/.cache
 HOMEPATHS=$(git -C "$REPO" grep -nI '/Users/[a-z]' -- 'config/*.conf' 2>/dev/null)
 is "no tracked config hardcodes a home directory" "" "$HOMEPATHS"
 
+# The update confirmation used to return osascript's exit status, and with no
+# button named "Cancel" AppleScript raised nothing on dismissal: both buttons
+# exited 0, so "Not now" installed the update. A gate that cannot say no is
+# worse than no gate, so every way out of the dialog is checked here. ask() is
+# lifted from the source rather than restated, or the test drifts from the code.
+ASKDIR=$(mktemp -d)
+sed -n '/^ask() {/,/^}/p' "$REPO/config/plugins/update_now.sh" > "$ASKDIR/ask.sh"
+ask_says() { # <stubbed osascript body> -> yes|no
+  printf '#!/bin/bash\n%s\n' "$1" > "$ASKDIR/osascript"; chmod +x "$ASKDIR/osascript"
+  PATH="$ASKDIR:$PATH" bash -c "source '$ASKDIR/ask.sh'; ask t b Update" && echo yes || echo no
+}
+is "confirming the update installs it"      "yes" "$(ask_says 'echo "button returned:Update"')"
+is "Not now does not install the update"    "no"  "$(ask_says 'echo "button returned:Not now"')"
+is "dismissing does not install the update" "no"  "$(ask_says 'exit 1')"
+is "an unreadable dialog never means yes"   "no"  "$(ask_says 'echo garbage')"
+rm -rf "$ASKDIR"
+
 echo
 printf '%d passed, %d failed, %d skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" -eq 0 ]
