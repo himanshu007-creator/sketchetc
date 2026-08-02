@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.3.4 — theme studio recolours itself, and opens in the right colours
+
+- Fixed: the Theme Studio opened with a pink background. A change in 1.3.3 shifted its arguments and swapped the background with the accent colour
+- Applying a theme now recolours the Theme Studio itself immediately, instead of keeping the old colours until you closed and reopened it
+- The studio's arguments are named rather than positional, so a future change cannot silently shift them, and a test now checks that what the app passes is exactly what the window reads
+
 ## 1.3.3 — theme and iconset selection applies again
 
 - Fixed: picking a theme or an icon set did nothing. The pickers wrote to a path the bar stopped reading in 1.3.1, and nothing failed loudly enough to notice
