@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.3.5 — Notifications you can actually control
+
+- Every notification type is now sound, silent or off on its own
+- AI agent completion is its own category, on by default, so you can quiet it without losing everything else
+- Shelf drops and new release alerts finally appear in Settings
+
 ## 1.3.4 — theme studio recolours itself, and opens in the right colours
 
 - Fixed: the Theme Studio opened with a pink background. A change in 1.3.3 shifted its arguments and swapped the background with the accent colour
