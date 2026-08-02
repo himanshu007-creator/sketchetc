@@ -45,7 +45,10 @@ LOCAL=$(git -C "$APP" rev-parse --short HEAD 2>/dev/null)
 REMOTE=$(git -C "$APP" rev-parse --short "origin/$CHANNEL" 2>/dev/null)
 echo "$BEHIND $LOCAL $REMOTE" > "$STATE"
 
-if [ "${BEHIND:-0}" -gt 0 ] && [ "$(cat "$(state_get update_skip)" 2>/dev/null)" != "$REMOTE" ]; then
+# update_skip holds the skipped commit itself. Reading it as a path (cat) was a
+# leftover from when it was a marker file: it always came back empty, so the
+# comparison never matched and "Skip this version" quietly did nothing.
+if [ "${BEHIND:-0}" -gt 0 ] && [ "$(state_get update_skip)" != "$REMOTE" ]; then
   sketchybar --set "$NAME" drawing=on label="$BEHIND" icon.color=$PINK label.color=$PINK
   # notify once per remote head
   if [ ! -f "$(uc_runtime ".update_notified_$REMOTE")" ]; then

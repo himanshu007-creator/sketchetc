@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.3.7 — Fixes for installs and upgrades
+
+- New installs no longer inherit a data folder path from the developer's machine
+- Upgrading from 1.3.5 could fail with a git error and silently leave you on the old version, fixed
+- Skip this version now actually skips
+
 ## 1.3.6 — Release hygiene fix
 
 - v1.3.5 shipped a generated cache file by mistake, removed

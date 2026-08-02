@@ -84,9 +84,23 @@ if [ "$LOCAL" = 1 ]; then
   say "Using this checkout ($APP)"
 elif [ -d "$APP/.git" ]; then
   say "Updating sketchetc ($BRANCH)"
+  # colors.sh regenerates config/.cache on every bar load, and v1.3.5 shipped
+  # those files tracked. A dirty generated file is enough for --ff-only to
+  # refuse, and the raw git error went straight to the terminal while the
+  # installer carried on and announced success: the user read "installed" and
+  # was still on the old version. Discard what is generated, and if the pull
+  # still cannot fast-forward, set local edits aside rather than give up.
+  [ "$DRY" = 1 ] || git -C "$APP" checkout -- config/.cache 2>/dev/null || true
   run git -C "$APP" fetch --quiet origin "$BRANCH"
   run git -C "$APP" checkout --quiet "$BRANCH"
-  run git -C "$APP" pull --ff-only --quiet origin "$BRANCH"
+  if [ "$DRY" = 1 ]; then
+    run git -C "$APP" pull --ff-only --quiet origin "$BRANCH"
+  elif ! git -C "$APP" pull --ff-only --quiet origin "$BRANCH" 2>/dev/null; then
+    warn "local changes blocked the update, keeping them in a git stash"
+    git -C "$APP" stash push --quiet --include-untracked -m "sketchetc install" 2>/dev/null || true
+    git -C "$APP" pull --ff-only --quiet origin "$BRANCH" 2>/dev/null \
+      || warn "could not update; still on $(cat "$APP/VERSION" 2>/dev/null). Check: git -C $APP status"
+  fi
 else
   say "Fetching sketchetc ($BRANCH)"
   run mkdir -p "$(dirname "$APP")"
