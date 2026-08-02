@@ -192,6 +192,14 @@ is "no state is written into the checkout" "" "$WRITES"
 # machine's widget list and palette, and shellcheck failed on generated syntax.
 is "generated caches stay untracked" "" "$(git -C "$REPO" ls-files config/.cache 2>/dev/null)"
 
+# config/settings.conf is tracked as a migration source, so whatever sits in it
+# ships to everyone. It carried data_dir=/Users/<me>/... , which uc_migrate
+# copies verbatim on any install that does not go through docs/install.sh: the
+# tarball and clone-then-./install.sh routes both handed new users a home
+# directory they cannot even create. Empty resolves per machine.
+HOMEPATHS=$(git -C "$REPO" grep -nI '/Users/[a-z]' -- 'config/*.conf' 2>/dev/null)
+is "no tracked config hardcodes a home directory" "" "$HOMEPATHS"
+
 echo
 printf '%d passed, %d failed, %d skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" -eq 0 ]
