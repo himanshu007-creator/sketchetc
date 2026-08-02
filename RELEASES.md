@@ -1,5 +1,9 @@
 # Release notes
 
+## 1.3.6 — Release hygiene fix
+
+- v1.3.5 shipped a generated cache file by mistake, removed
+
 ## 1.3.5 — Notifications you can actually control
 
 - Every notification type is now sound, silent or off on its own
