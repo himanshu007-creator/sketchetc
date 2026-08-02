@@ -1,6 +1,14 @@
-// theme_win <builtinThemesDir> <userThemesDir> <stateCli> <activeTheme> <activeIconset> <bgHex> <panelHex> <a1Hex> <a2Hex>
+// theme_win --builtin-dir D --user-dir D --state-cli P --theme N --iconset N
+//           --bg HEX --panel HEX --accent1 HEX --accent2 HEX
+//
 // Theme Studio: browse themes (swatch strips), edit every color with native
 // color wells, save custom themes, delete them, and switch iconsets.
+//
+// Named flags, not positions. Adding two arguments in v1.3.3 shifted every later
+// index, the shift was applied as sequential replacements that cascaded, and the
+// colour pairs ended up swapped: the studio opened with a pink background and
+// nothing complained. Order carries no meaning here now, and a missing flag stops
+// the program instead of quietly rendering the wrong colour.
 //
 // Every path arrives as an argument and every selection is written through
 // state_cli.sh. This used to hardcode ~/.config/sketchybar/.theme, which stopped
@@ -8,14 +16,29 @@
 // with no error anywhere. Nothing here may know where config lives.
 import AppKit
 
-guard CommandLine.arguments.count >= 10 else {
-    print("usage: theme_win builtinDir userDir stateCli active iconset bg panel a1 a2"); exit(2)
+var opts: [String: String] = [:]
+var argi = 1
+let rawArgs = CommandLine.arguments
+while argi < rawArgs.count {
+    let a = rawArgs[argi]
+    if a.hasPrefix("--"), argi + 1 < rawArgs.count {
+        opts[String(a.dropFirst(2))] = rawArgs[argi + 1]
+        argi += 2
+    } else { argi += 1 }
 }
-let themesDir = CommandLine.arguments[1]        // built-in, read only
-let userThemesDir = CommandLine.arguments[2]    // everything we save goes here
-let stateCli = CommandLine.arguments[3]
-var activeTheme = CommandLine.arguments[4]
-let activeIconset = CommandLine.arguments[5]
+func need(_ k: String) -> String {
+    guard let v = opts[k], !v.isEmpty else {
+        FileHandle.standardError.write("theme_win: missing --\(k)\n".data(using: .utf8)!)
+        exit(2)
+    }
+    return v
+}
+
+let themesDir = need("builtin-dir")     // shipped themes, read only
+let userThemesDir = need("user-dir")    // everything we save goes here
+let stateCli = need("state-cli")
+var activeTheme = need("theme")
+let activeIconset = need("iconset")
 
 func color(_ hex: String) -> NSColor {
     var h = hex.replacingOccurrences(of: "0x", with: "")
@@ -31,10 +54,13 @@ func hexRGB(_ c: NSColor) -> String {
                   Int(round(r.redComponent * 255)), Int(round(r.greenComponent * 255)), Int(round(r.blueComponent * 255)))
 }
 
-let bg = color(CommandLine.arguments[8])
-let panel = color(CommandLine.arguments[9])
-let accent1 = color(CommandLine.arguments[6])
-let accent2 = color(CommandLine.arguments[7])
+// Mutable: applying a theme restyles this window in place. They used to be
+// captured at launch, so the bar recoloured while the window you picked in kept
+// its old colours until you closed and reopened it.
+var bg = color(need("bg"))
+var panel = color(need("panel"))
+var accent1 = color(need("accent1"))
+var accent2 = color(need("accent2"))
 let textC = NSColor(calibratedWhite: 0.93, alpha: 1)
 let dimC = NSColor(calibratedWhite: 1, alpha: 0.5)
 let mono = NSFont(name: "JetBrainsMono Nerd Font", size: 12.5) ?? .monospacedSystemFont(ofSize: 12.5, weight: .regular)
@@ -179,6 +205,7 @@ final class Ctl: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         shell("'\(stateCli)' set theme '\(name)'; sketchybar --reload")
         activeTheme = name
         themes = loadThemes()
+        restyle(to: name)                        // the window follows the choice too
         table.reloadData()
     }
     @objc func saveAs() {
@@ -304,6 +331,7 @@ settingsBtn.bezelStyle = .rounded
 settingsBtn.frame = NSRect(x: footer.frame.width - 118, y: FOOT - 52, width: 104, height: 26)
 footer.addSubview(settingsBtn)
 // iconsets are files in ../icons — read them and preview real glyphs
+var activeIconButton: NSButton?
 let iconDir = (themesDir as NSString).deletingLastPathComponent + "/icons"
 let sets = ((try? FileManager.default.contentsOfDirectory(atPath: iconDir)) ?? [])
     .filter { $0.hasSuffix(".sh") }.map { String($0.dropLast(3)) }.sorted()
@@ -331,7 +359,7 @@ for (i, set) in sets.enumerated() {
     let rowIdx = i / perRow, colIdx = i % perRow
     _ = rowIdx
     b.frame = NSRect(x: 14 + CGFloat(colIdx) * (bw + 6), y: stripY, width: bw, height: 28)
-    if set == activeIconset { b.contentTintColor = accent1 }
+    if set == activeIconset { b.contentTintColor = accent1; activeIconButton = b }
     footer.addSubview(b)
 }
 
@@ -366,6 +394,36 @@ if let i = themes.firstIndex(where: { $0.name == activeTheme }) {
     table.selectRowIndexes([0], byExtendingSelection: false)
 }
 ctl.tableViewSelectionDidChange(Notification(name: NSTableView.selectionDidChangeNotification))
+
+// Repaint the studio in the theme just chosen. Without this the bar recoloured
+// while the window you picked in kept its launch colours, which reads as "that
+// did not work" — the same doubt the bar's own fix removed.
+func restyle(to name: String) {
+    // same precedence the bar uses: a theme the user edited beats the built-in
+    let userPath = userThemesDir + "/" + name + ".sh"
+    let path = FileManager.default.fileExists(atPath: userPath) ? userPath : themesDir + "/" + name + ".sh"
+    guard let src = try? String(contentsOfFile: path, encoding: .utf8) else { return }
+    var vals: [String: String] = [:]
+    for line in src.components(separatedBy: "\n") where line.contains("export ") && line.contains("=") {
+        let body = line.replacingOccurrences(of: "export ", with: "")
+        guard let k = body.components(separatedBy: "=").first?.trimmingCharacters(in: .whitespaces),
+              let rest = body.components(separatedBy: "=").dropFirst().first else { continue }
+        vals[k] = rest.components(separatedBy: " ")[0].trimmingCharacters(in: .whitespaces)
+    }
+    guard let b = vals["BAR_COLOR"], let pn = vals["ITEM_BG_COLOR"],
+          let a1 = vals["PINK"], let a2 = vals["CYAN"] else { return }
+    bg = color(b); panel = color(pn); accent1 = color(a1); accent2 = color(a2)
+
+    win.backgroundColor = bg
+    title.textColor = accent1
+    table.backgroundColor = panel
+    scroll.backgroundColor = panel
+    detail.layer?.backgroundColor = panel.cgColor
+    footer.layer?.backgroundColor = panel.withAlphaComponent(0.55).cgColor
+    stripLabel.textColor = accent2
+    activeIconButton?.contentTintColor = accent1
+    win.contentView?.needsDisplay = true
+}
 
 win.makeKeyAndOrderFront(nil)
 NSApp.activate(ignoringOtherApps: true)

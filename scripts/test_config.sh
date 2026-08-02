@@ -114,6 +114,23 @@ HITS=$(grep -rn --include='*.sh' --include='*.swift' \
         "$REPO/config" "$REPO/scripts" 2>/dev/null | grep -vE '^\s*[^:]+:[0-9]+:\s*(//|#)' | grep -v 'user_config.sh')
 is "no code hardcodes a user config path" "" "$HITS"
 
+# The theme studio's palette came out swapped because two arguments were added
+# and every later position shifted. A GUI cannot be asserted headlessly, but the
+# actual defect was a contract mismatch between caller and binary, and that is
+# checkable: the flags one passes must be exactly the flags the other reads.
+PASSED_FLAGS=$(grep -oE '\-\-[a-z0-9-]+' "$REPO/config/plugins/theme_open.sh" | sort -u)
+PARSED_FLAGS=$(grep -oE 'need\("[a-z0-9-]+"\)' "$REPO/config/plugins/bin/theme_win.swift" \
+               | sed 's/need("/--/; s/")//' | sort -u)
+is "theme_win reads exactly the flags theme_open passes" "" \
+  "$(comm -3 <(printf '%s\n' "$PASSED_FLAGS") <(printf '%s\n' "$PARSED_FLAGS") | tr -d '\t')"
+
+# a missing flag has to stop the program, not render the wrong colour silently
+TW="$REPO/config/plugins/bin/theme_win"
+if [ -x "$TW" ]; then
+  "$TW" --builtin-dir /tmp --user-dir /tmp >/dev/null 2>&1
+  is "a missing flag exits non-zero" "2" "$?"
+fi
+
 # state written into the checkout is lost on reinstall and can block a pull
 WRITES=$(grep -rn --include='*.sh' -E '>\s*"?\$\{?CONFIG_DIR\}?/\.[a-z_]+|touch "\$CONFIG_DIR/\.[a-z_]+' \
         "$REPO/config" 2>/dev/null | grep -v '\.cache' | grep -vE ':\s*(//|#)')
