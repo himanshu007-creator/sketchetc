@@ -20,7 +20,7 @@ if [ "$SENDER" = "mouse.clicked" ]; then
     [ -n "$pid" ] || continue
     i=$((i + 1))
     pop_row "a$i" "$ICON_AGENTS" "$(printf '%s · up %s · %s%% cpu' "${comm##*/}" "$etime" "$pcpu")" \
-      "kill $pid 2>/dev/null; sketchybar --set ai_agents popup.drawing=off; $CONFIG_DIR/plugins/notify.sh toggles 'Agents' 'Stopped ${comm##*/}'" \
+      "kill $pid 2>/dev/null; sketchybar --set ai_agents popup.drawing=off; $CONFIG_DIR/plugins/notify.sh agents 'Agents' 'Stopped ${comm##*/}'" \
       "$PURPLE"
   done < <(running)
   [ "$i" = 0 ] && pop_row none "$ICON_AGENTS" "nothing running" "" "$WHITE"
@@ -68,7 +68,7 @@ if [ -f "$SEEN" ]; then
   while IFS='|' read -r pid comm; do
     [ -n "$pid" ] || continue
     if ! printf '%s\n' "$NOW" | grep -q "^$pid|"; then
-      "$CONFIG_DIR/plugins/notify.sh" toggles "Agents" "${comm##*/} finished" &
+      "$CONFIG_DIR/plugins/notify.sh" agents "Agents" "${comm##*/} finished" &
     fi
   done < "$SEEN"
 fi

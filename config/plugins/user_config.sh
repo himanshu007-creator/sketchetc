@@ -132,6 +132,14 @@ uc_migrate() {
       [ -n "$val" ] && { state_set "$key" "$val"; break; }
     done
   done
+  # notify_sound held a FILE PATH but matched the notify_<category> shape that
+  # notify.sh looks up, so a future category named "sound" would have read a path
+  # as its on/off value. Renamed; carry any existing value across.
+  if [ -z "$(state_raw sound_file)" ]; then
+    val=$(state_raw notify_sound)
+    [ -n "$val" ] && { state_set sound_file "$val"; state_clear notify_sound; }
+  fi
+
   # preferences that used to be marker files
   [ -f "$cfg/.fs_guard_off" ] && [ -z "$(state_raw fs_guard)" ] && state_set fs_guard off
   if [ -f "$cfg/.update_skip" ] && [ -z "$(state_raw update_skip)" ]; then

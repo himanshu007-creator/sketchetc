@@ -26,6 +26,7 @@ let monoBold = NSFont(name: "JetBrainsMono Nerd Font Bold", size: 12) ?? .monosp
 struct Row { let key: String; let label: String }
 let GROUPS: [(String, [Row])] = [
     ("NOTIFICATIONS", [
+        Row(key: "notify_agents", label: "AI agent finished"),
         Row(key: "notify_shot", label: "screenshots"),
         Row(key: "notify_aura", label: "aura awards and exports"),
         Row(key: "notify_journal", label: "journal locks and exports"),
@@ -34,6 +35,8 @@ let GROUPS: [(String, [Row])] = [
         Row(key: "notify_speedtest", label: "speedtest results"),
         Row(key: "notify_ports", label: "dev server stopped"),
         Row(key: "notify_clipboard", label: "clipboard actions"),
+        Row(key: "notify_shelf", label: "shelf drops"),
+        Row(key: "notify_update", label: "new release available"),
         Row(key: "notify_toggles", label: "toggles, themes, misc"),
     ]),
     ("SOUND", [
@@ -73,11 +76,21 @@ let W: CGFloat = 520
 let rowCount = GROUPS.reduce(0) { $0 + $1.1.count }
 let H: CGFloat = 96 + CGFloat(rowCount) * 30 + CGFloat(GROUPS.count) * 34
 
+let MODES = ["on", "silent", "off"]        // sound, banner only, nothing
+
 final class Ctl: NSObject {
     var boxes: [NSButton] = []
     @objc func flip(_ b: NSButton) {
         let key = b.identifier?.rawValue ?? ""
         conf[key] = b.state == .on ? "on" : "off"
+        writeConf()
+    }
+    // Notification rows are three-state, so a checkbox cannot represent them: it
+    // would show "silent" as unchecked and overwrite it with "off" on the next
+    // click, quietly destroying the setting.
+    @objc func pickMode(_ seg: NSSegmentedControl) {
+        let key = seg.identifier?.rawValue ?? ""
+        conf[key] = MODES[max(0, min(seg.selectedSegment, MODES.count - 1))]
         writeConf()
     }
     @objc func close() { exit(0) }
@@ -116,16 +129,35 @@ for (group, rows) in GROUPS {
     card.addSubview(gl)
     y -= 28
     for r in rows {
-        let b = NSButton(checkboxWithTitle: "  " + r.label, target: ctl, action: #selector(Ctl.flip(_:)))
-        b.identifier = NSUserInterfaceItemIdentifier(r.key)
-        b.font = mono
-        b.contentTintColor = accent1
-        b.attributedTitle = NSAttributedString(string: "  " + r.label,
-            attributes: [.font: mono, .foregroundColor: textC])
-        b.state = (conf[r.key] ?? "on") == "on" ? .on : .off
-        b.frame = NSRect(x: 20, y: y, width: card.frame.width - 40, height: 22)
-        card.addSubview(b)
-        ctl.boxes.append(b)
+        if r.key.hasPrefix("notify_") {
+            let l = NSTextField(labelWithString: r.label)
+            l.font = mono
+            l.textColor = textC
+            l.frame = NSRect(x: 22, y: y + 3, width: card.frame.width - 220, height: 18)
+            card.addSubview(l)
+
+            let seg = NSSegmentedControl(labels: ["sound", "silent", "off"],
+                                         trackingMode: .selectOne,
+                                         target: ctl, action: #selector(Ctl.pickMode(_:)))
+            seg.identifier = NSUserInterfaceItemIdentifier(r.key)
+            seg.font = NSFont(name: "JetBrainsMono Nerd Font", size: 10.5) ?? .monospacedSystemFont(ofSize: 10.5, weight: .regular)
+            // anything unrecognised reads as "on", matching how notify.sh treats it
+            let cur = conf[r.key] ?? "on"
+            seg.selectedSegment = MODES.firstIndex(of: cur) ?? 0
+            seg.frame = NSRect(x: card.frame.width - 192, y: y, width: 172, height: 22)
+            card.addSubview(seg)
+        } else {
+            let b = NSButton(checkboxWithTitle: "  " + r.label, target: ctl, action: #selector(Ctl.flip(_:)))
+            b.identifier = NSUserInterfaceItemIdentifier(r.key)
+            b.font = mono
+            b.contentTintColor = accent1
+            b.attributedTitle = NSAttributedString(string: "  " + r.label,
+                attributes: [.font: mono, .foregroundColor: textC])
+            b.state = (conf[r.key] ?? "on") == "on" ? .on : .off
+            b.frame = NSRect(x: 20, y: y, width: card.frame.width - 40, height: 22)
+            card.addSubview(b)
+            ctl.boxes.append(b)
+        }
         y -= 30
     }
     y -= 6

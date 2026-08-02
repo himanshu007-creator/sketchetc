@@ -7,11 +7,11 @@ case "$CHOICE" in
   "Choose file…")
     F=$(osascript -e 'POSIX path of (choose file with prompt "Pick an audio file" of type {"public.audio"})' 2>/dev/null)
     [ -z "$F" ] && exit 0
-    state_set notify_sound "$SOUND"
+    state_set sound_file "$SOUND"
     "$HOME/.config/sketchybar/plugins/notify.sh" toggles "sketchetc" "This is your new notification sound"
     ;;
   "System default")
-    rm -f "$(state_get notify_sound)"
+    rm -f "$(state_get sound_file)"
     "$HOME/.config/sketchybar/plugins/notify.sh" toggles "sketchetc" "Back to the system default sound"
     ;;
 esac

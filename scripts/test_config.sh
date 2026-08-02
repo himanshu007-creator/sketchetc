@@ -107,6 +107,48 @@ is "a widget added in a release appears" "on" \
   "$(inbox 'source config/colors.sh; widget_on shelf && printf on || printf off')"
 cleanup
 
+# --- notifications: three states, independently per category ------------------
+# Sound used to be one global switch, so quieting a chatty notification meant
+# silencing every notification in the app.
+sandbox
+STUB=$(mktemp -d)
+printf '#!/bin/bash\necho "$*" >> "$STUB_LOG"\n' > "$STUB/osascript"
+printf '#!/bin/bash\necho "afplay $*" >> "$STUB_LOG"\n' > "$STUB/afplay"
+chmod +x "$STUB/osascript" "$STUB/afplay"
+
+notify_as() { # <category> <state> -> what notify.sh actually did
+  local cat="$1" want="$2"
+  inbox "source config/plugins/user_config.sh; uc_ensure; state_set notify_$cat '$want'" >/dev/null
+  export STUB_LOG=$(mktemp)
+  rm -rf "$CONFIG_DIR/.cache"
+  SKETCHETC_CONFIG="$SB" STUB_LOG="$STUB_LOG" PATH="$STUB:$PATH" \
+    bash "$REPO/config/plugins/notify.sh" "$cat" T M 2>/dev/null
+  if [ ! -s "$STUB_LOG" ]; then echo "nothing"
+  elif grep -q 'sound name' "$STUB_LOG"; then echo "sound"
+  else echo "banner"; fi
+}
+is "notify on gives a banner with sound" "sound"   "$(notify_as agents on)"
+is "notify silent gives a banner only"   "banner"  "$(notify_as agents silent)"
+is "notify off gives nothing"            "nothing" "$(notify_as agents off)"
+
+# the bug this replaced: agent notifications shared the generic toggles bucket
+inbox 'source config/plugins/user_config.sh; uc_ensure; state_set notify_agents off' >/dev/null
+export STUB_LOG=$(mktemp)
+SKETCHETC_CONFIG="$SB" STUB_LOG="$STUB_LOG" PATH="$STUB:$PATH" \
+  bash "$REPO/config/plugins/notify.sh" toggles T M 2>/dev/null
+is "silencing one category leaves the others alone" "fires" \
+  "$([ -s "$STUB_LOG" ] && echo fires || echo silent)"
+is "no agent notification still uses the shared bucket" "0" \
+  "$(grep -c 'notify.sh"* toggles' "$REPO/config/plugins/ai_agents.sh")"
+rm -rf "$STUB"; cleanup
+
+# --- the custom sound key was shaped like a category and is not one ------------
+LEG=$(mktemp -d); sandbox
+printf 'notify_sound=/System/Library/Sounds/Ping.aiff\n' > "$LEG/settings.conf"
+is "a custom sound survives the key rename" "/System/Library/Sounds/Ping.aiff" \
+  "$(inbox "source config/plugins/user_config.sh; CONFIG_DIR='$LEG' uc_migrate; printf '%s' \"\$(state_get sound_file)\"")"
+rm -rf "$LEG"; cleanup
+
 # --- nothing may hardcode where config lives ----------------------------------
 echo "guards"
 HITS=$(grep -rn --include='*.sh' --include='*.swift' \
