@@ -23,7 +23,7 @@ rm -f "$FIXTURE"/.theme "$FIXTURE"/.iconset "$FIXTURE"/.notify_sound \
       "$FIXTURE"/settings.conf "$FIXTURE"/widgets.conf
 rm -rf "$FIXTURE/.cache"
 export CONFIG_DIR="$FIXTURE"
-PASS=0 FAIL=0
+PASS=0 FAIL=0 SKIP=0
 
 ok()   { PASS=$((PASS + 1)); printf '  ok   %s\n' "$1"; }
 bad()  { FAIL=$((FAIL + 1)); printf '  FAIL %s\n     expected: %s\n     actual:   %s\n' "$1" "$2" "$3"; }
@@ -125,10 +125,18 @@ is "theme_win reads exactly the flags theme_open passes" "" \
   "$(comm -3 <(printf '%s\n' "$PASSED_FLAGS") <(printf '%s\n' "$PARSED_FLAGS") | tr -d '\t')"
 
 # a missing flag has to stop the program, not render the wrong colour silently
+# Binaries are gitignored, so CI has none. Compile it rather than skip: a test
+# that silently disappears on the machine that gates merges is barely a test.
 TW="$REPO/config/plugins/bin/theme_win"
-if [ -x "$TW" ]; then
+if [ ! -x "$TW" ] && command -v swiftc >/dev/null 2>&1; then
+  TW=$(mktemp -d)/theme_win
+  swiftc -O -o "$TW" "$REPO/config/plugins/bin/theme_win.swift" 2>/dev/null || TW=""
+fi
+if [ -n "$TW" ] && [ -x "$TW" ]; then
   "$TW" --builtin-dir /tmp --user-dir /tmp >/dev/null 2>&1
   is "a missing flag exits non-zero" "2" "$?"
+else
+  SKIP=$((SKIP + 1)); printf '  SKIP a missing flag exits non-zero (no swiftc)\n'
 fi
 
 # state written into the checkout is lost on reinstall and can block a pull
@@ -137,5 +145,5 @@ WRITES=$(grep -rn --include='*.sh' -E '>\s*"?\$\{?CONFIG_DIR\}?/\.[a-z_]+|touch 
 is "no state is written into the checkout" "" "$WRITES"
 
 echo
-printf '%d passed, %d failed\n' "$PASS" "$FAIL"
+printf '%d passed, %d failed, %d skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" -eq 0 ]
