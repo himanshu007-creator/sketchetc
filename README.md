@@ -25,7 +25,7 @@ curl -fsSL https://himanshu007-creator.github.io/sketchetc/install.sh | bash
 
 <!-- INSTALLER:START -->
 <details>
-<summary><b>Read the installer before you run it</b> (recommended — it is 194 lines, no obfuscation)</summary>
+<summary><b>Read the installer before you run it</b> (recommended — it is 208 lines, no obfuscation)</summary>
 
 ```bash
 #!/bin/bash
@@ -118,9 +118,23 @@ if [ "$LOCAL" = 1 ]; then
   say "Using this checkout ($APP)"
 elif [ -d "$APP/.git" ]; then
   say "Updating sketchetc ($BRANCH)"
+  # colors.sh regenerates config/.cache on every bar load, and v1.3.5 shipped
+  # those files tracked. A dirty generated file is enough for --ff-only to
+  # refuse, and the raw git error went straight to the terminal while the
+  # installer carried on and announced success: the user read "installed" and
+  # was still on the old version. Discard what is generated, and if the pull
+  # still cannot fast-forward, set local edits aside rather than give up.
+  [ "$DRY" = 1 ] || git -C "$APP" checkout -- config/.cache 2>/dev/null || true
   run git -C "$APP" fetch --quiet origin "$BRANCH"
   run git -C "$APP" checkout --quiet "$BRANCH"
-  run git -C "$APP" pull --ff-only --quiet origin "$BRANCH"
+  if [ "$DRY" = 1 ]; then
+    run git -C "$APP" pull --ff-only --quiet origin "$BRANCH"
+  elif ! git -C "$APP" pull --ff-only --quiet origin "$BRANCH" 2>/dev/null; then
+    warn "local changes blocked the update, keeping them in a git stash"
+    git -C "$APP" stash push --quiet --include-untracked -m "sketchetc install" 2>/dev/null || true
+    git -C "$APP" pull --ff-only --quiet origin "$BRANCH" 2>/dev/null \
+      || warn "could not update; still on $(cat "$APP/VERSION" 2>/dev/null). Check: git -C $APP status"
+  fi
 else
   say "Fetching sketchetc ($BRANCH)"
   run mkdir -p "$(dirname "$APP")"
@@ -236,7 +250,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect 027726f6e77c3672d48263e00b65379dedee9df0e0fa2db2608aa6bc1348cc4d
+shasum -a 256 install.sh    # expect 35907a760bfdf0a8293f9804e5d74a03dcaa1fd8b1a028835c0d3167ce5541d5
 less install.sh             # read it
 bash install.sh
 ```
@@ -244,7 +258,7 @@ bash install.sh
 **Pin to a release** (immutable — this exact commit, forever):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.6/docs/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/himanshu007-creator/sketchetc/v1.3.7/docs/install.sh -o install.sh
 shasum -a 256 install.sh && bash install.sh
 ```
 <!-- INSTALLER:END -->
