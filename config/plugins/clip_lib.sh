@@ -30,6 +30,10 @@ entry_hash() { # file -> md5
   echo "$h"
 }
 
+# Sets CLIP_LAST_PATH to the entry it stored or bumped, so a caller can use the
+# stored file without guessing its name — the snip path puts that exact file on
+# the pasteboard, rather than copying the bytes around a second time.
+CLIP_LAST_PATH=""
 bump_or_store() { # hash tmpfile suffix
   local hash="$1" tmp="$2" suffix="$3" f
   for f in "$STORE"/*."${suffix##*.}"; do
@@ -38,11 +42,16 @@ bump_or_store() { # hash tmpfile suffix
     if [ "$(entry_hash "$f")" = "$hash" ]; then
       touch "$f"                       # re-copy of an old entry: newest again
       rm -f "$tmp"
+      CLIP_LAST_PATH="$f"
       return
     fi
   done
-  local dest="$STORE/$(date +%s)-$suffix"
+  # Entries are named by the second they arrived, so two captures inside the same
+  # second landed on one filename and the second silently overwrote the first.
+  local dest="$STORE/$(date +%s)-$suffix" n=1
+  while [ -e "$dest" ]; do dest="$STORE/$(date +%s)_$n-$suffix"; n=$((n + 1)); done
   mv "$tmp" "$dest"
+  CLIP_LAST_PATH="$dest"
   printf '%s' "$hash" > "$dest.md5" 2>/dev/null   # known already, never re-hash it
   # trim to MAX, taking each entry's sidecars with it
   clip_entries | tail -n +$((MAX + 1)) | while read -r old; do

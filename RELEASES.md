@@ -1,5 +1,10 @@
 # Release notes
 
+## 1.4.1 — Capture area, fixed
+
+- Capture area now puts the snip you just took into Option+V, not an image from earlier
+- One capture-area option instead of two, and it always copies
+
 ## 1.4.0 — The audit release
 
 - Option+V works again: arrow keys, Enter, Esc and type-to-filter, in a window that actually takes focus

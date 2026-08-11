@@ -21,8 +21,10 @@ shot_row() { # name icon label flags dest
       click_script="sketchybar --set shot popup.drawing=off; osascript -e 'do shell script \"nohup $CONFIG_DIR/plugins/shot_do.sh $4 > /dev/null 2>&1 &\"'" \
     --subscribe "shot.$1" mouse.entered mouse.exited
 }
-shot_row area  󰩭 "Capture area"             area
-shot_row clip  󰅍 "Capture area → clipboard" areaclip
+# One area row, not two. "Capture area" and "Capture area → clipboard" were the
+# same gesture with different destinations, and the clipboard one was the broken
+# path. Capturing an area always copies it now, so there is nothing to choose.
+shot_row area  󰩭 "Capture area"               area
 shot_row text  󰚞 "Capture area → text (OCR)"  areatext
 shot_row win   󰖯 "Capture window"           window
 shot_row full  󰹑 "Full screen"              full

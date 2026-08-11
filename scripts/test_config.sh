@@ -254,6 +254,20 @@ is "an empty draft writes no journal file" "0" "$JOUT"
 find "$JDIR" -name '*.md' -exec chflags nouchg {} \; 2>/dev/null
 rm -rf "$JDIR"
 
+# Capturing an area must never read the image back off the pasteboard. The old
+# path ran `screencapture -ic` and then asked only "is there an image on the
+# pasteboard", which any leftover image satisfied — so it stored a picture from
+# minutes ago instead of the snip just taken, and did the same on Esc.
+is "capture area does not round-trip via the pasteboard" "" \
+   "$(grep -n 'screencapture -ic' "$REPO/config/plugins/shot_do.sh" 2>/dev/null | grep -v ':[[:space:]]*#')"
+is "the snip is stored from the captured file" "yes" \
+   "$(grep -q 'bump_or_store .*img.png' "$REPO/config/plugins/shot_do.sh" && echo yes || echo no)"
+# one area row, not two: the second one WAS the broken path
+is "exactly one capture-area row" "1" \
+   "$(grep -c '^shot_row area ' "$REPO/config/items/shot.sh" 2>/dev/null)"
+is "the removed areaclip row is gone everywhere" "" \
+   "$(git -C "$REPO" grep -nI 'areaclip' -- config 2>/dev/null | grep -v ':[[:space:]]*#')"
+
 # CounterAPI retired v1 on 7 Aug 2026 and its v2 dropped increments silently, so
 # the project moved to Abacus. Every call site fails quietly by design
 # (>/dev/null || true, .catch(() => {}), a badge that just reads "inaccessible"),
