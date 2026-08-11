@@ -10,12 +10,12 @@ if [ "$SENDER" = "mouse.clicked" ]; then
       label.color=$PINK label.font="$HEAD_FONT" label.padding_left=12 label.padding_right=12
   i=0
   gh search prs --review-requested=@me --state=open --limit 5 --json title,url 2>/dev/null \
-    | python3 -c "import json,sys; [print(p['url'] + '\t' + p['title'][:48]) for p in json.load(sys.stdin)]" \
+    | python3 -c "import json,sys; [print(p['url'] + '\t' + (p['title'][:38] + '…' if len(p['title']) > 38 else p['title'])) for p in json.load(sys.stdin)]" \
     | while IFS=$'\t' read -r url title; do
     i=$((i + 1))
     sketchybar --add item "github.row.$i" popup.github \
       --set "github.row.$i" icon=󰊤 icon.color=$CYAN icon.padding_left=10 \
-        background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=340 \
+        background.drawing=on background.color=$TRANSPARENT background.corner_radius=6 width=$POP_W_WIDE \
         label="$title" label.font="$ROW_FONT" label.padding_right=12 \
         script="$CONFIG_DIR/plugins/popup_row.sh" \
         click_script="open '$url'; sketchybar --set github popup.drawing=off" \

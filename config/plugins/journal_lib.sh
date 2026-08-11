@@ -45,22 +45,31 @@ jfinalize() { # <YYYY-MM-DD> [content-file] · write that day's entry, chain, lo
   f=$(jfile_for "$day"); dir=$(dirname "$f")
   [ -z "$(jroot)" ] && return 1
   [ -f "$f" ] && return 0   # already locked
-  mkdir -p "$dir"
   src="${2:-$JDRAFT}"
+  # Nothing written means nothing to lock. This used to write a
+  # "_(no update logged)_" stub and chflags uchg it, so every weekend and every
+  # skipped day left behind an immutable empty file you could not even delete
+  # without chflags nouchg first. A day you did not journal is simply absent now.
+  [ -s "$src" ] || return 1
+  mkdir -p "$dir"
   {
     echo "# $(date -j -f %Y-%m-%d "$day" '+%A, %d %B %Y' 2>/dev/null || echo "$day")"
     echo
     echo "> aura: $(source "$CONFIG_DIR/plugins/aura_lib.sh"; aura_today) · locked $(date '+%d %b %H:%M')"
     echo
-    if [ -s "$src" ]; then cat "$src"; else echo "_(no update logged)_"; fi
+    cat "$src"
   } > "$f"
   jchain_append "$f"
   chflags uchg "$f"
   rm -f "$JDRAFT"
+  # The entry has banked the day's aura in its header, so the running score
+  # starts again from zero — the "reset on final save" half of the aura window.
+  ( source "$CONFIG_DIR/plugins/aura_lib.sh"; aura_window_reset )
+  sketchybar --set aura label=0 2>/dev/null
   "$CONFIG_DIR/plugins/notify.sh" journal "Journal" "Entry for $day is locked in" &
 }
 
-jenforce_noon() { # at/after noon: lock yesterday if still open (stub if empty)
+jenforce_noon() { # at/after noon: close yesterday if it was actually written
   local hour yesterday setup_day
   hour=${JNOW_H:-$(date +%H)}
   yesterday=$(date -v-1d +%Y-%m-%d)
@@ -68,7 +77,13 @@ jenforce_noon() { # at/after noon: lock yesterday if still open (stub if empty)
   [ -f "$(jfile_for "$yesterday")" ] && return 0
   setup_day=$(date -r "$JCONF" +%Y-%m-%d 2>/dev/null) || return 0
   [[ "$setup_day" > "$yesterday" ]] && return 0   # journal didn't exist yet that day
-  jfinalize "$yesterday"
+  # jfinalize now refuses an empty draft, so this writes a file only on days with
+  # real content. The aura window still has to close, or a day you chose not to
+  # journal would keep accumulating into the next one forever.
+  if ! jfinalize "$yesterday"; then
+    ( source "$CONFIG_DIR/plugins/aura_lib.sh"
+      [ "$(aura_window_start)" -lt "$(date -v-0H -v0M -v0S +%s)" ] && aura_window_reset )
+  fi
 }
 
 jverify() {

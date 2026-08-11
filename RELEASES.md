@@ -1,5 +1,14 @@
 # Release notes
 
+## 1.4.0 — The audit release
+
+- Option+V works again: arrow keys, Enter, Esc and type-to-filter, in a window that actually takes focus
+- Snips reach the clipboard in under a third of a second, and history keeps all 20 entries instead of collapsing to two
+- Menu bar icons from other apps are back, and clicking one opens that app's real dropdown
+- Killing a dev server now frees the port even when it has workers or ignores the polite signal
+- The bar no longer slows down over a long day
+- Aura survives midnight and resets when you lock your journal entry, and days you do not journal no longer leave empty files
+
 ## 1.3.8 — Update prompt fix
 
 - Choosing Not now on the update prompt no longer installs the update anyway

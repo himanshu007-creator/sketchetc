@@ -1,49 +1,54 @@
 #!/bin/bash
-# Third-party menu bar icons (Docker, Cursor, Dropbox …) mirrored into the bar.
+# Third-party menu bar icons (Docker, Cursor, Dropbox …) brought into the bar —
+# and, unlike before, actually clickable.
 #
-# Our bar draws over the native menu bar, which means every icon an app installs
-# up there is hidden. That is the single biggest reason to want the native bar
-# back. sketchybar's alias component renders those items in place, and a chevron
-# collapses them into a tray the way Bartender and Ice do.
+# Our bar draws over the native menu bar, so every icon an app installs up there
+# is hidden. That is the single biggest reason someone would want the native bar
+# back, which makes this the widget that has to work.
 #
-# Requires Screen Recording permission: aliases are drawn by capturing the real
-# menu bar item. Without it, `--query default_menu_items` returns an error and we
-# say so once rather than silently showing nothing.
+# This used to use sketchybar's `alias` component. An alias is a periodically
+# re-captured BITMAP of the real item: it needed the Screen Recording grant (never
+# given here, so the widget silently drew nothing at all), it cost one screen
+# capture per icon every 5 seconds, and it could never be clicked, because
+# sketchybar has no way to activate the item it photographed.
+#
+# Now: bin/menubar_extras enumerates the real extras through Accessibility, we
+# draw our own themed items with the app's own glyph, and a click sends AXPress to
+# the genuine status item so the app's real dropdown opens. Accessibility only —
+# the grant the bar already holds — and no screen capture anywhere.
 source "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/user_config.sh"
 widget_on extras || return 0
 
+HELPER="$CONFIG_DIR/plugins/bin/menubar_extras"
+[ -x "$HELPER" ] || return 0
 
+# app-name -> glyph, the same map front_app.sh uses. It already knows Docker
+# Desktop, Cursor and ~1600 others; anything unknown falls back to :default:.
+source "$CONFIG_DIR/plugins/icon_map_fn.sh"
 
-MENU_ITEMS=$(sketchybar --query default_menu_items 2>/dev/null)
-if [ -z "$MENU_ITEMS" ] || [[ "$MENU_ITEMS" == *"Permissions not given"* ]]; then
-  # one actionable nudge, not a silent no-op
-  if [ ! -f "$(uc_runtime .extras_nagged)" ]; then
+DENY=$(setting extras_deny)
+
+APPS=()
+PIDS=()
+while IFS=$'\t' read -r pid name; do
+  [ -n "$name" ] || continue
+  # comma-separated app names the user never wants mirrored
+  [ -n "$DENY" ] && [[ ",$DENY," == *",$name,"* ]] && continue
+  PIDS+=("$pid")
+  APPS+=("$name")
+done < <("$HELPER" list 2>/dev/null)
+
+if [ "${#APPS[@]}" -eq 0 ]; then
+  # Accessibility missing is the one failure worth naming: everything else just
+  # means no app happens to have an icon right now.
+  if ! "$HELPER" list >/dev/null 2>&1 && [ ! -f "$(uc_runtime .extras_nagged)" ]; then
     touch "$(uc_runtime .extras_nagged)"
     "$PLUGIN_DIR/notify.sh" toggles "Menu bar icons" \
-      "Grant Screen Recording to sketchybar to mirror Docker, Cursor and friends" &
+      "Grant Accessibility to sketchybar to show Docker, Cursor and friends" &
   fi
   return 0
 fi
 rm -f "$(uc_runtime .extras_nagged)"
-
-# macOS' own extras are already covered by our native widgets, so mirroring them
-# would just duplicate what the bar shows. Anything else is fair game.
-SKIP_RE='^(Control Center|Clock|Siri|Spotlight|TextInputMenuAgent|WiFi|Battery|BentoBox)'
-DENY=$(setting extras_deny)
-
-ALIASES=()
-while IFS= read -r line; do
-  [ -n "$line" ] || continue
-  owner=${line%%,*}
-  case "$owner" in
-    ''|'#'*) continue ;;
-  esac
-  [[ "$owner" =~ $SKIP_RE ]] && continue
-  [ -n "$DENY" ] && [[ ",$DENY," == *",$owner,"* ]] && continue
-  ALIASES+=("$line")
-done < <(printf '%s\n' "$MENU_ITEMS" | tr -d '"[]' | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$')
-
-[ "${#ALIASES[@]}" -eq 0 ] && return 0
 
 COLLAPSED=$(state_get extras_collapsed)
 DRAW=on; CHEV=$ICON_CHEV_LEFT
@@ -57,16 +62,25 @@ args=(--add item extras.toggle right
       --subscribe extras.toggle mouse.clicked mouse.entered mouse.exited)
 
 i=0
-for a in "${ALIASES[@]}"; do
+for idx in "${!APPS[@]}"; do
+  name="${APPS[$idx]}"
   i=$((i + 1))
-  args+=(--add alias "$a" right
-         --set "$a" alias.color=$WHITE
-           background.drawing=off
-           icon.padding_left=2 icon.padding_right=2
-           label.padding_left=0 label.padding_right=0
+  __icon_map "$name"
+  # AXPress goes through System Events on purpose: the Accessibility grant is per
+  # client binary, so the same call from our own helper returns -25204 while
+  # System Events — already trusted, already used for snapping — just works.
+  args+=(--add item "extras.app.$i" right
+         --set "extras.app.$i" icon="$icon_result"
+           icon.font="sketchybar-app-font:Regular:16.0"
+           icon.color=$WHITE
+           icon.padding_left=6 icon.padding_right=6
+           label.drawing=off
            drawing=$DRAW
-           alias.update_freq=5)
+           click_script="osascript -e 'tell application \"System Events\" to tell process \"$name\" to perform action \"AXPress\" of menu bar item 1 of menu bar 2' >/dev/null 2>&1"
+           script="$PLUGIN_DIR/popup_row.sh"
+         --subscribe "extras.app.$i" mouse.entered mouse.exited)
 done
 
 sketchybar "${args[@]}" 2>/dev/null
-printf '%s\n' "${ALIASES[@]}" > "$CONFIG_DIR/.cache/extras.list" 2>/dev/null
+mkdir -p "$CONFIG_DIR/.cache" 2>/dev/null
+printf '%s\n' "${APPS[@]}" > "$CONFIG_DIR/.cache/extras.list" 2>/dev/null

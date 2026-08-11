@@ -52,6 +52,7 @@ source "$ITEM_DIR/spaces.sh"
 source "$ITEM_DIR/front_app.sh"
 source "$ITEM_DIR/meeting.sh"
 
+source "$ITEM_DIR/shelf.sh"    # rightmost: first sourced on the right side wins
 source "$ITEM_DIR/clock.sh"
 source "$ITEM_DIR/stats.sh"       # ram + cpu bracket
 source "$ITEM_DIR/temps.sh"
@@ -77,7 +78,6 @@ source "$ITEM_DIR/ai_agents.sh"
 source "$ITEM_DIR/media.sh"
 source "$ITEM_DIR/fs_guard.sh"
 source "$ITEM_DIR/mic.sh"
-source "$ITEM_DIR/shelf.sh"
 source "$ITEM_DIR/extras.sh"
 source "$ITEM_DIR/updater.sh"
 source "$ITEM_DIR/click_watch.sh"

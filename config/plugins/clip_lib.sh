@@ -70,12 +70,20 @@ capture() {
   if [ -n "$count" ] && [ "$count" != "$info" ]; then
     read -r seen < "$STORE/.changecount" 2>/dev/null
     [ "$seen" = "$count" ] && return
-    printf '%s' "$count" > "$STORE/.changecount" 2>/dev/null
+    # NOT claimed here. Writing it before the work meant a capture that then
+    # failed, or lost a race, still marked this changeCount as handled — and that
+    # copy could never be picked up again. Claimed at the end, on success.
   fi
+  # The candidate name carries the pid. It was one fixed .candidate.png, so two
+  # captures running at once (easy: the trigger fires from the watcher, the bar
+  # and shot_do.sh) overwrote each other and one moved the other's half-written
+  # bytes into the store. A big image loses that race far more often than a line
+  # of text, which is why the store filled with text and no images.
   if [[ "$info" == *"PNGf"* || "$info" == *"TIFF"* ]]; then
     command -v pngpaste >/dev/null || return
-    f="$STORE/.candidate.png"
-    pngpaste "$f" 2>/dev/null || return
+    f="$STORE/.candidate.$$.png"
+    pngpaste "$f" 2>/dev/null || { rm -f "$f"; return; }
+    [ -s "$f" ] || { rm -f "$f"; return; }
     hash=$(md5 -q "$f")
     bump_or_store "$hash" "$f" "img.png"
   else
@@ -83,10 +91,13 @@ capture() {
     text=$(pbpaste 2>/dev/null | head -c 100000)
     [ -z "$text" ] && return
     hash=$(printf '%s' "$text" | md5 -q)
-    f="$STORE/.candidate.txt"
+    f="$STORE/.candidate.$$.txt"
     printf '%s' "$text" > "$f"
     bump_or_store "$hash" "$f" "txt.txt"
   fi
+  rm -f "$STORE/.candidate.$$."* 2>/dev/null
+  [ -n "$count" ] && printf '%s' "$count" > "$STORE/.changecount" 2>/dev/null
+  return 0
 }
 
 clip_watch_ensure() {
@@ -95,9 +106,20 @@ clip_watch_ensure() {
   # history until the next reload. kill -0 is cheap enough to check every tick.
   local pid_file="${TMPDIR:-/tmp}/sketchybar_clip_watch.pid" bin="$CONFIG_DIR/plugins/bin/clip_watch"
   [ -x "$bin" ] || return 0
-  if [ -f "$pid_file" ] && kill -0 "$(cat "$pid_file" 2>/dev/null)" 2>/dev/null; then
+  local live
+  live=$(cat "$pid_file" 2>/dev/null)
+  if [ -n "$live" ] && kill -0 "$live" 2>/dev/null; then
     return 0
   fi
-  nohup "$bin" "$STORE" > /dev/null 2>&1 &
+  # Reap watchers this pidfile lost track of before starting another. Changing
+  # data_dir orphaned the old watcher and spawned a second, and because the store
+  # path is case-insensitive on macOS, "Desktop/journal" and "Desktop/Journal"
+  # were the same folder watched three times over: three processes each firing
+  # clip_captured and each writing the same .candidate file, clobbering one
+  # another mid-copy.
+  for old in $(pgrep -f "$bin" 2>/dev/null); do
+    [ "$old" = "$live" ] || kill "$old" 2>/dev/null
+  done
+  nohup "$bin" "$STORE" "$MAX" > /dev/null 2>&1 &
   echo $! > "$pid_file"
 }

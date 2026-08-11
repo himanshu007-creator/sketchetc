@@ -6,7 +6,6 @@ hover
 close_popup_on_exit
 [ "$SENDER" = "mouse.clicked" ] || exit 0
 
-STATE=""   # collapse state is a settings key
 LIST="$CONFIG_DIR/.cache/extras.list"
 [ -f "$LIST" ] || exit 0
 
@@ -17,11 +16,14 @@ else
 fi
 state_set extras_collapsed "$NEXT"
 
-# one invocation for the chevron and every alias, so the tray snaps rather than
-# rippling open item by item
-args=(--animate sin 12 --set extras.toggle icon="$CHEV")
+# One invocation for the chevron and every icon, so the tray snaps rather than
+# rippling open item by item. The list holds app NAMES for display; the items are
+# extras.app.N, numbered in the same order they were written.
+args=("${ANIM[@]}" --set extras.toggle icon="$CHEV")
+i=0
 while IFS= read -r a; do
   [ -n "$a" ] || continue
-  args+=(--set "$a" drawing=$DRAW)
+  i=$((i + 1))
+  args+=(--set "extras.app.$i" drawing=$DRAW)
 done < "$LIST"
 sketchybar "${args[@]}" 2>/dev/null
