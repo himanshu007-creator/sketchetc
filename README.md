@@ -8,10 +8,10 @@ Free forever, source visible to everyone — and it replaces a small pile of pai
 <p>
 <a href="https://github.com/himanshu007-creator/sketchetc/releases/latest"><img alt="latest release" src="https://img.shields.io/github/v/release/himanshu007-creator/sketchetc?style=flat&label=release&color=ff6ec7&labelColor=1b0d33&display_name=tag&sort=semver"></a>
 <a href="https://himanshu007-creator.github.io/sketchetc"><img alt="site" src="https://img.shields.io/badge/site-sketchetc-ff6ec7?style=flat"></a>
-<img alt="installs" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Finstalls%2F&query=%24.count&label=installs&color=0bd3d3&labelColor=1b0d33&style=flat">
+<img alt="installs" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fabacus.jasoncameron.dev%2Fget%2Fsketchetc%2Fdownloads&query=%24.value&label=installs&color=0bd3d3&labelColor=1b0d33&style=flat">
 <img alt="stars" src="https://img.shields.io/github/stars/himanshu007-creator/sketchetc?style=flat&logo=github&logoColor=white&label=stars&color=9b5de5&labelColor=1b0d33">
 <img alt="forks" src="https://img.shields.io/github/forks/himanshu007-creator/sketchetc?style=flat&logo=github&logoColor=white&label=forks&color=555&labelColor=1b0d33">
-<img alt="visits" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.counterapi.dev%2Fv1%2Fsketchetc%2Fvisits%2F&query=%24.count&label=site%20visits&color=ffa552&labelColor=1b0d33">
+<img alt="visits" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fabacus.jasoncameron.dev%2Fget%2Fsketchetc%2Fvisits&query=%24.value&label=site%20visits&color=ffa552&labelColor=1b0d33">
 <img alt="last commit" src="https://img.shields.io/github/last-commit/himanshu007-creator/sketchetc?style=flat&color=555">
 <a href="https://scorecard.dev/viewer/?uri=github.com/himanshu007-creator/sketchetc"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/himanshu007-creator/sketchetc/badge"></a>
 <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-CC%20BY--NC--ND%204.0-0bd3d3?style=flat&labelColor=1b0d33"></a>
@@ -219,7 +219,7 @@ run brew services restart sketchybar
 # sent (no IP logging on our side, no id, no phone home afterwards).
 # Skip with --no-count or SKETCHETC_NO_TELEMETRY=1
 if [ "$COUNT" = 1 ] && [ "$DRY" = 0 ]; then
-  curl -s --max-time 3 "https://api.counterapi.dev/v1/sketchetc/installs/up" >/dev/null 2>&1 || true
+  curl -s --max-time 3 "https://abacus.jasoncameron.dev/hit/sketchetc/downloads" >/dev/null 2>&1 || true
   printf '   counted this install on a public tally · skip with --no-count
 '
 elif [ "$COUNT" = 0 ]; then
@@ -250,7 +250,7 @@ EOF
 
 ```bash
 curl -fsSLO https://himanshu007-creator.github.io/sketchetc/install.sh
-shasum -a 256 install.sh    # expect 35907a760bfdf0a8293f9804e5d74a03dcaa1fd8b1a028835c0d3167ce5541d5
+shasum -a 256 install.sh    # expect 0e21c9f691e742d555b81669ceea7c780817e024da1ca9019a9e77d6f1e9b74c
 less install.sh             # read it
 bash install.sh
 ```

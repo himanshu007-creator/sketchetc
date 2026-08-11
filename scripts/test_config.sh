@@ -217,6 +217,34 @@ is "dismissing does not install the update" "no"  "$(ask_says 'exit 1')"
 is "an unreadable dialog never means yes"   "no"  "$(ask_says 'echo garbage')"
 rm -rf "$ASKDIR"
 
+# CounterAPI retired v1 on 7 Aug 2026 and its v2 dropped increments silently, so
+# the project moved to Abacus. Every call site fails quietly by design
+# (>/dev/null || true, .catch(() => {}), a badge that just reads "inaccessible"),
+# which is how the counters stayed dead for days with no symptom. A stale host
+# left behind anywhere would do it again, and silence is why a test has to say it.
+is "nothing still points at the old counter service" "" \
+   "$(git -C "$REPO" grep -nI 'counterapi\.dev' -- . ':!RELEASES.md' ':!docs/data' 2>/dev/null)"
+
+# The install counter cannot be decremented, so a regression that ignores
+# --no-count silently inflates a public number with every CI run. The counter
+# block is lifted from the installer and driven with a fake curl.
+CNTDIR=$(mktemp -d)
+sed -n '/^if \[ "\$COUNT" = 1 \]/,/^fi$/p' "$REPO/docs/install.sh" > "$CNTDIR/block.sh"
+# If the guard line is ever reworded this extraction yields nothing, and "sends
+# nothing" then passes for the worst possible reason. Prove we grabbed the block.
+is "the counter block was actually found" "yes" \
+   "$(grep -qE 'curl .*https://' "$CNTDIR/block.sh" && echo yes || echo no)"
+printf '#!/bin/bash\necho called >> "%s/hits"\n' "$CNTDIR" > "$CNTDIR/curl"; chmod +x "$CNTDIR/curl"
+pings() { # <COUNT> <DRY> -> number of curl calls
+  : > "$CNTDIR/hits"
+  PATH="$CNTDIR:$PATH" COUNT="$1" DRY="$2" bash "$CNTDIR/block.sh" >/dev/null 2>&1
+  wc -l < "$CNTDIR/hits" | tr -d ' '
+}
+is "a normal install counts once"        "1" "$(pings 1 0)"
+is "--no-count sends nothing"            "0" "$(pings 0 0)"
+is "--dry-run sends nothing"             "0" "$(pings 1 1)"
+rm -rf "$CNTDIR"
+
 echo
 printf '%d passed, %d failed, %d skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" -eq 0 ]
