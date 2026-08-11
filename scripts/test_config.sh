@@ -217,6 +217,43 @@ is "dismissing does not install the update" "no"  "$(ask_says 'exit 1')"
 is "an unreadable dialog never means yes"   "no"  "$(ask_says 'echo garbage')"
 rm -rf "$ASKDIR"
 
+# sketchybar's --set parser takes key=value pairs. A bare "$POP_W" token (no
+# width=) sits in the chain doing nothing and the row silently renders at auto
+# width, which is where the ragged, "cluttered" popups came from. Errors are
+# swallowed by pop_end's 2>/dev/null, so only a test finds this.
+# pop_begin takes the width as a positional argument, so it is legitimately bare.
+BAREW=$(git -C "$REPO" grep -nI '\$POP_W' -- 'config/*.sh' 'config/**/*.sh' 2>/dev/null \
+        | grep -v 'width=\$POP_W' | grep -v 'pop_begin' | grep -v 'popup_lib.sh')
+is "no bare \$POP_W token in a --set chain" "" "$BAREW"
+
+# uc_migrate is one-shot by design. When the early return was removed it ran on
+# every source of colors.sh — roughly 4.6 times a second, mkdir + five awks + a
+# basename per theme — which was the bulk of the all-day slowdown. The sentinel
+# is what keeps it one-shot, so assert a second pass does no filesystem work.
+MIGDIR=$(mktemp -d)
+SPAWNS=$(SKETCHETC_CONFIG="$MIGDIR/uc" CONFIG_DIR="$REPO/config" bash -c '
+  source "$CONFIG_DIR/plugins/user_config.sh"; uc_ensure' 2>/dev/null;
+  SKETCHETC_CONFIG="$MIGDIR/uc" CONFIG_DIR="$REPO/config" bash -x -c '
+  source "$CONFIG_DIR/plugins/user_config.sh"; uc_ensure' 2>&1 \
+  | grep -cE '^\++ (awk|basename|mkdir|cp) ')
+is "uc_migrate does no work on a second pass" "0" "$SPAWNS"
+rm -rf "$MIGDIR"
+
+# A day with no draft must leave no file. jfinalize used to write a
+# "_(no update logged)_" stub and chflags uchg it, so every weekend left an
+# immutable empty entry behind that could not even be deleted normally.
+JDIR=$(mktemp -d)
+JOUT=$(SKETCHETC_CONFIG="$JDIR/uc" CONFIG_DIR="$REPO/config" bash -c '
+  mkdir -p "$SKETCHETC_CONFIG" "'"$JDIR"'/data"
+  printf "data_dir=%s\n" "'"$JDIR"'/data" > "$SKETCHETC_CONFIG/settings.conf"
+  source "$CONFIG_DIR/plugins/journal_lib.sh" 2>/dev/null
+  : > "$JDRAFT"
+  jfinalize 2026-08-09 >/dev/null 2>&1
+  find "'"$JDIR"'/data" -name "*.md" 2>/dev/null | wc -l | tr -d " "' 2>/dev/null)
+is "an empty draft writes no journal file" "0" "$JOUT"
+find "$JDIR" -name '*.md' -exec chflags nouchg {} \; 2>/dev/null
+rm -rf "$JDIR"
+
 # CounterAPI retired v1 on 7 Aug 2026 and its v2 dropped increments silently, so
 # the project moved to Abacus. Every call site fails quietly by design
 # (>/dev/null || true, .catch(() => {}), a badge that just reads "inaccessible"),

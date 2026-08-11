@@ -9,6 +9,11 @@ let store = CommandLine.arguments.count > 1
     ? CommandLine.arguments[1]
     : NSString(string: "~/.local/share/sketchetc/data/clipboard").expandingTildeInPath
 
+// How deep the history goes. Passed in by clip_lib.sh so there is one source of
+// truth: this file used to hardcode 5 while the shell side honoured clip_max=20,
+// and the smaller number silently won whenever a screenshot was imported.
+let maxEntries = CommandLine.arguments.count > 2 ? (Int(CommandLine.arguments[2]) ?? 20) : 20
+
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
@@ -93,12 +98,21 @@ func importShot(_ path: String) {
               let png = rep.representation(using: .png, properties: [:]) {
         try? png.write(to: URL(fileURLWithPath: dest))
     }
-    // keep only the newest five entries, same rule as the shell side
-    let files = ((try? fm.contentsOfDirectory(atPath: store)) ?? [])
-        .filter { !$0.hasPrefix(".") }
+    // Trim to the same depth the shell side uses, counting the same things.
+    //
+    // This kept "the newest five" and counted .md5/.h sidecars as entries, so a
+    // 20-deep history collapsed to about two real items every time a native
+    // screenshot arrived. It also deleted names without their sidecars, which is
+    // where the orphaned *.md5 files in the store came from.
+    let entries = ((try? fm.contentsOfDirectory(atPath: store)) ?? [])
+        .filter { !$0.hasPrefix(".") && !$0.hasSuffix(".md5") && !$0.hasSuffix(".h") }
         .map { (name: $0, date: (try? fm.attributesOfItem(atPath: store + "/" + $0)[.modificationDate] as? Date) ?? nil) }
         .sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
-    for old in files.dropFirst(5) { try? fm.removeItem(atPath: store + "/" + old.name) }
+    for old in entries.dropFirst(maxEntries) {
+        for suffix in ["", ".md5", ".h"] {
+            try? fm.removeItem(atPath: store + "/" + old.name + suffix)
+        }
+    }
     sketchybar(["--update"])
 }
 

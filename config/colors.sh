@@ -13,7 +13,13 @@ uc_ensure
 # depend on which config it was built from, so one cache file shared across
 # different SKETCHETC_CONFIG values hands back another run's palette. The test
 # suite tripped over exactly that.
-ENV_CACHE="$CONFIG_DIR/.cache/env$(printf '%s' "$USER_CONF_DIR" | cksum | cut -d' ' -f1).sh"
+#
+# The key used to be $(printf … | cksum | cut …): three processes on every
+# source, ~4.6 times a second, all day, to hash a string that cannot change
+# within a process. Bash can do it with no spawns at all — the value only has to
+# be stable and filename-safe, not cryptographic.
+_uc_key() { local s="${USER_CONF_DIR//\//_}"; printf '%s' "${s//[^a-zA-Z0-9_]/-}"; }
+ENV_CACHE="$CONFIG_DIR/.cache/env$(_uc_key).sh"
 
 _env_cache_stale() {
   [ -f "$ENV_CACHE" ] || return 0

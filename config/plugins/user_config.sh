@@ -90,7 +90,21 @@ uc_runtime() { # <name> -> path under the user's state dir
 # .iconset was never copied at all and .theme stayed stale, so the theme picker
 # wrote somewhere nothing read. Anything missing is filled in; anything present
 # is left alone, which keeps it idempotent.
+#
+# One-shot, and it has to stay that way. Making it per-file idempotent removed
+# the early return, and colors.sh calls uc_ensure on every source, so this ran
+# ~4.6 times a second forever: a mkdir, five awk spawns and a basename per theme
+# file, about 13 processes per bar tick and millions a day. That is the bulk of
+# the "gets slow after a few hours" report.
+#
+# The sentinel is written only after a completed pass, so an interrupted
+# migration still retries, and every step below stays individually idempotent.
+#
+# Adding a NEW migration step later? Bump the sentinel name, or existing installs
+# will skip it forever.
+UC_MIGRATED="$USER_CONF_DIR/state/.migrated"
 uc_migrate() {
+  [ -f "$UC_MIGRATED" ] && return 0
   mkdir -p "$USER_CONF_DIR/themes" "$USER_CONF_DIR/state" 2>/dev/null || return 0
 
   local cfg="${CONFIG_DIR:-$HOME/.config/sketchybar}"
@@ -148,17 +162,21 @@ uc_migrate() {
   fi
   for f in "$cfg"/themes/*.sh; do
     [ -e "$f" ] || continue
-    case "$(basename "$f")" in
+    # ${f##*/} is basename without the process
+    case "${f##*/}" in
       vice-city.sh|cyberpunk.sh|matrix.sh|catppuccin.sh|miami-sunset.sh) continue ;;  # built in
     esac
     cp "$f" "$USER_CONF_DIR/themes/" 2>/dev/null
   done
+  : > "$UC_MIGRATED" 2>/dev/null   # only now: a partial pass must run again
 }
 
 # Ensure the files exist, seeding from the shipped defaults on a fresh install.
+# Every test here is a bash builtin, so the common case (everything already in
+# place) costs no processes at all — this runs on every source of colors.sh.
 uc_ensure() {
   uc_migrate
-  mkdir -p "$USER_CONF_DIR/themes" 2>/dev/null
+  [ -d "$USER_CONF_DIR/themes" ] || mkdir -p "$USER_CONF_DIR/themes" 2>/dev/null
   [ -f "$USER_SETTINGS" ] || cp "$(uc_defaults settings)" "$USER_SETTINGS" 2>/dev/null
   [ -f "$USER_WIDGETS" ]  || cp "$(uc_defaults widgets)"  "$USER_WIDGETS"  2>/dev/null
 }
