@@ -3,7 +3,12 @@
 const $ = (s, r = document) => r.querySelector(s);
 const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
 const REPO = "himanshu007-creator/sketchetc";
-const COUNTER = "https://api.counterapi.dev/v1/sketchetc";
+// Abacus. CounterAPI retired v1 on 7 Aug 2026 and its v2 could not replace it:
+// increments were silently dropped (ten pings moved a counter by one) and there
+// is no way to set a starting value, so the totals carried over from v1 could
+// not be restored. Abacus counts every hit and seeds a counter on creation.
+// Mutating a counter needs an admin key, so these public URLs can only add.
+const COUNTER = "https://abacus.jasoncameron.dev";
 
 const FAQ = [
   ["does it replace the native menu bar?", "It draws over the strip macOS already reserves, so your windows still tile below it and native menus stay reachable. One row in the apple menu reverts everything instantly."],
@@ -145,11 +150,17 @@ function counters() {
     const foot = $(`#${id}`);
     if (foot) foot.textContent = n.toLocaleString();
   };
-  fetch(`${COUNTER}/visits/up`).then(r => r.json())
-    .then(d => { if (typeof d.count === "number") show("visits", d.count); })
+  // Read it defensively and leave the "—" placeholder if the shape ever moves:
+  // an error body here is {"error": ...} with no value at all.
+  const count = d => d?.value;
+  const isNum = n => typeof n === "number";
+  // /hit returns the value *after* incrementing, so a visitor sees their own
+  // visit counted. /get never increments, which is what the installs chip needs.
+  fetch(`${COUNTER}/hit/sketchetc/visits`).then(r => r.json())
+    .then(d => { if (isNum(count(d))) show("visits", count(d)); })
     .catch(() => {});
-  fetch(`${COUNTER}/installs/`).then(r => r.json())
-    .then(d => { if (typeof d.count === "number") show("installs", d.count); })
+  fetch(`${COUNTER}/get/sketchetc/downloads`).then(r => r.json())
+    .then(d => { if (isNum(count(d))) show("installs", count(d)); })
     .catch(() => {});
 }
 

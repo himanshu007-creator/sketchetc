@@ -185,7 +185,7 @@ run brew services restart sketchybar
 # sent (no IP logging on our side, no id, no phone home afterwards).
 # Skip with --no-count or SKETCHETC_NO_TELEMETRY=1
 if [ "$COUNT" = 1 ] && [ "$DRY" = 0 ]; then
-  curl -s --max-time 3 "https://api.counterapi.dev/v1/sketchetc/installs/up" >/dev/null 2>&1 || true
+  curl -s --max-time 3 "https://abacus.jasoncameron.dev/hit/sketchetc/downloads" >/dev/null 2>&1 || true
   printf '   counted this install on a public tally · skip with --no-count\n'
 elif [ "$COUNT" = 0 ]; then
   printf '   install counter skipped\n'
