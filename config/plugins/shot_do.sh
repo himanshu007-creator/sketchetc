@@ -1,5 +1,6 @@
 #!/bin/bash
-# shot_do.sh area|areaclip|window|full|timer · CleanShot-lite via screencapture
+# shot_do.sh area|areatext|window|full|timer|record|recordarea|color
+# CleanShot-lite via screencapture
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 export CONFIG_DIR
 source "$CONFIG_DIR/plugins/settings_lib.sh"
@@ -22,6 +23,62 @@ clipboard_has_image() {
     *PNGf*|*TIFF*|*png*|*tiff*) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+pb_changecount() {
+  local info bin="$CONFIG_DIR/plugins/bin/pbinfo"
+  [ -x "$bin" ] || return 0
+  info=$("$bin" 2>/dev/null)
+  info=${info#changeCount:}
+  printf '%s' "${info%%$'\n'*}"
+}
+
+# Capture an area straight into the clipboard history, with no pasteboard
+# round-trip anywhere in the path.
+#
+# This used to be `screencapture -ic` (pasteboard only) followed by
+# clipboard_has_image, which asks "is there an image on the pasteboard" and never
+# "did it change". Any image already sitting there satisfied it instantly, so the
+# widget announced success and the capture path stored — or re-bumped to the top —
+# whatever was already on the pasteboard. That is the "an image from a minute ago
+# showed up instead of my snip" report, and pressing Esc produced the same thing.
+#
+# Capturing to a file and moving THAT file into the store makes the history entry
+# the captured bytes by construction. Nothing is left on disk: the temp file is
+# either moved into the store or removed.
+snip_area() {
+  local tmp hash before after
+  tmp=$(mktemp "${TMPDIR:-/tmp}/sketchetc-snip.XXXXXX") || return 1
+  mv "$tmp" "$tmp.png" 2>/dev/null; tmp="$tmp.png"
+
+  before=$(pb_changecount)
+  screencapture -i "$tmp"
+  # Esc, or a zero-area drag: nothing was captured. Say nothing, store nothing.
+  if [ ! -s "$tmp" ]; then rm -f "$tmp"; return 0; fi
+
+  # History first. It is a local file move, so the snip is in Option+V almost
+  # immediately; setting the pasteboard costs ~275ms through osascript and used to
+  # run first, delaying the thing the user is about to go looking for.
+  source "$CONFIG_DIR/plugins/clip_lib.sh"
+  hash=$(md5 -q "$tmp")
+  bump_or_store "$hash" "$tmp" "img.png"     # moves tmp in, or drops it on a dup
+  rm -f "$tmp" 2>/dev/null
+  sketchybar --trigger clip_captured 2>/dev/null
+
+  # Then onto the pasteboard so ⌘V works, from the stored file itself. Heredoc
+  # rather than -e: this script is launched through `osascript -e 'do shell
+  # script'` and the guillemets in «class PNGf» do not survive that much quoting.
+  osascript <<EOF 2>/dev/null
+set the clipboard to (read (POSIX file "$CLIP_LAST_PATH") as «class PNGf»)
+EOF
+
+  # Claim the pasteboard state we just created. Without this the watcher sees a
+  # changed pasteboard a moment later and stores pngpaste's re-encode of the same
+  # image as a SECOND entry, which the md5 dedupe can never match to the first.
+  after=$(pb_changecount)
+  [ -n "$after" ] && [ "$after" != "$before" ] && printf '%s' "$after" > "$STORE/.changecount" 2>/dev/null
+
+  notify "Snip copied · Option+V to paste it"
 }
 
 REC_STATE="${TMPDIR:-/tmp}/sketchetc_recording"
@@ -85,8 +142,7 @@ esac
 # Interactive captures can take as long as the user needs, so callers launch
 # this script detached; it must not be tied to a click_script's lifetime.
 case "$1" in
-  area)     screencapture -i "$OUT" ;;
-  areaclip) screencapture -ic ;;
+  area)     snip_area; exit 0 ;;
   areatext) screencapture -i "$OUT" ;;   # OCR'd below, the png is scratch
   window)   screencapture -iw "$OUT" ;;
   full)     screencapture -x "$OUT" ;;
@@ -108,13 +164,6 @@ if [ "$1" = "areatext" ]; then
     else
       notify "No text found in that selection"
     fi
-  fi
-elif [ "$1" = "areaclip" ]; then
-  # Esc during an interactive capture copies nothing, so only claim success when
-  # something actually landed on the pasteboard
-  if clipboard_has_image; then
-    sketchybar --trigger clip_captured 2>/dev/null
-    notify "Snip ready to paste"
   fi
 elif [ -s "$OUT" ]; then
   if setting_on shot_to_clipboard; then
